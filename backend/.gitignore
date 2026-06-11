@@ -1,10 +1,11 @@
 #datasets
-backend/app/ml/data/
+app/ml/data/
 
 # Models and Artifacts
-backend/app/ml/models/
+app/ml/models/
 
 # Exploratory Data Analysis (EDA) notebooks/outputs
-backend/app/ml/eda/
+app/ml/eda/
 
 .venv/
+app/sample.txt
