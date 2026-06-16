@@ -1,6 +1,8 @@
 #datasets
 app/ml/data/
 
+.env
+
 # Models and Artifacts
 app/ml/models/
 
