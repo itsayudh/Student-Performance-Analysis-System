@@ -15,6 +15,13 @@ from app.api.v1.predictions     import router as predictions_router
 from app.api.v1.recommendations import router as recommendations_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1 import auth
+from app.api.v1 import students
+from app.api.v1 import teachers
+from app.api.v1 import attendance
+from app.api.v1 import marks
+from app.api.v1 import analytics
+from app.api.v1 import reports
+from app.api.v1 import imports
 
 # ── TODO: Your friend adds these routers when ready ───────────────────────────
 # from app.api.v1.auth            import router as auth_router
@@ -61,6 +68,13 @@ app.include_router(predictions_router, prefix="/api/v1")
 app.include_router(recommendations_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
 app.include_router(auth.router)
+app.include_router(students.router)
+app.include_router(teachers.router)
+app.include_router(attendance.router)
+app.include_router(marks.router)
+app.include_router(analytics.router)
+app.include_router(reports.router)
+app.include_router(imports.router)
 
 # ── TODO: Your friend includes these when ready ───────────────────────────────
 # app.include_router(auth_router,       prefix="/api/v1")
