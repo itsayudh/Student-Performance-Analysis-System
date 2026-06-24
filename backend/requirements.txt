@@ -25,6 +25,7 @@ fonttools==4.63.0
 greenlet==3.5.1
 h11==0.16.0
 idna==3.18
+iniconfig==2.3.0
 ipykernel==7.2.0
 ipython==9.14.0
 ipython_pygments_lexers==1.1.1
@@ -48,6 +49,7 @@ parso==0.8.7
 passlib==1.7.4
 pillow==12.2.0
 platformdirs==4.10.0
+pluggy==1.6.0
 prompt_toolkit==3.0.52
 psutil==7.2.2
 psycopg2-binary==2.9.12
@@ -59,6 +61,7 @@ pydantic-settings==2.14.1
 pydantic_core==2.46.4
 Pygments==2.20.0
 pyparsing==3.3.2
+pytest==9.1.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 python-jose==3.5.0
