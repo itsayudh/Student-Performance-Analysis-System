@@ -248,6 +248,38 @@ def _generate_rule_based_recommendations(
     return recommendations
 
 
+def _has_unread_duplicate(
+    db         : Session,
+    student_id : uuid.UUID,
+    rec_type   : str,
+    message    : str,
+) -> bool:
+    """
+    Check if an identical unread recommendation already exists.
+    Prevents duplicate recommendations from stacking up on
+    repeated predictions for the same student.
+
+    Args:
+        db         : SQLAlchemy database session
+        student_id : UUID of the student
+        rec_type   : recommendation type
+        message    : recommendation message text
+
+    Returns:
+        True if identical unread recommendation exists, False otherwise
+    """
+    existing = (
+        db.query(Recommendation)
+        .filter(
+            Recommendation.student_id          == student_id,
+            Recommendation.recommendation_type == rec_type,
+            Recommendation.message             == message,
+            Recommendation.is_read             == False,
+        )
+        .first()
+    )
+    return existing is not None
+
 # ── Database save function ─────────────────────────────────────────────────────
 
 def _save_recommendations(
@@ -257,17 +289,23 @@ def _save_recommendations(
 ) -> List[Recommendation]:
     """
     Save list of recommendation dicts to the recommendations table.
-
-    Args:
-        db              : SQLAlchemy database session
-        student_id      : UUID of the student
-        recommendations : list of dicts from _generate_rule_based_recommendations
-
-    Returns:
-        List of saved Recommendation ORM objects
+    Skips duplicate unread recommendations to prevent stacking.
     """
     saved = []
     for rec in recommendations:
+        # Skip if identical unread recommendation already exists
+        if _has_unread_duplicate(
+            db         = db,
+            student_id = student_id,
+            rec_type   = rec["type"],
+            message    = rec["message"],
+        ):
+            print(
+                f"[SPAS ML] Skipping duplicate recommendation "
+                f"(type={rec['type']}) for student {student_id}"
+            )
+            continue
+
         record = Recommendation(
             id                  = uuid.uuid4(),
             student_id          = student_id,
@@ -280,7 +318,9 @@ def _save_recommendations(
         db.add(record)
         saved.append(record)
 
-    db.commit()
+    if saved:
+        db.commit()
+
     return saved
 
 
