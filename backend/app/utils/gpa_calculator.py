@@ -16,11 +16,11 @@ def score_to_grade_point(score: float) -> float:
     elif score >= 40:
         return 2.00
     elif score >= 30:
-        return 1.80
-    elif score >= 20:
         return 1.60
+    elif score >= 20:
+        return 1.20
     else:
-        return 0.80
+        return 0.00
 
 
 def score_to_letter_grade(score: float) -> str:

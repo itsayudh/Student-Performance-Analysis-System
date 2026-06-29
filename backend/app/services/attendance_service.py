@@ -6,6 +6,7 @@ from fastapi import HTTPException
 
 from app.models.attendance import Attendance
 from app.models.student import Student
+from app.models.subject import Subject
 
 
 def record_attendance(db: Session, current_user_id: str, data: dict):
@@ -83,6 +84,19 @@ def get_student_attendance(
 
     records = query.order_by(Attendance.attendance_date.desc()).all()
 
+    # FIX: build a subject_id -> (code, name) lookup so responses can show
+    # readable subject info instead of raw UUIDs. Fetched once, not per-row,
+    # to avoid N+1 queries.
+    subject_ids = {r.subject_id for r in records}
+    subjects = db.query(Subject).filter(Subject.id.in_(subject_ids)).all() if subject_ids else []
+    subject_lookup = {
+        str(s.id): {"subject_code": s.subject_code, "subject_name": s.subject_name}
+        for s in subjects
+    }
+
+    def _subject_info(sid):
+        return subject_lookup.get(str(sid), {"subject_code": None, "subject_name": None})
+
     total = len(records)
     present = sum(1 for r in records if r.status == "PRESENT")
     absent  = sum(1 for r in records if r.status == "ABSENT")
@@ -101,8 +115,11 @@ def get_student_attendance(
     by_subject = []
     for sid, counts in by_subject_map.items():
         pct = round((counts["present"] / counts["total"] * 100), 2) if counts["total"] > 0 else 0.0
+        info = _subject_info(sid)
         by_subject.append({
             "subject_id": sid,
+            "subject_code": info["subject_code"],
+            "subject_name": info["subject_name"],
             "percentage": pct,
             "status": "WARNING" if pct < 75 else "OK"
         })
@@ -113,6 +130,8 @@ def get_student_attendance(
             {
                 "date": str(r.attendance_date),
                 "subject_id": str(r.subject_id),
+                "subject_code": _subject_info(r.subject_id)["subject_code"],
+                "subject_name": _subject_info(r.subject_id)["subject_name"],
                 "status": r.status
             } for r in records
         ],

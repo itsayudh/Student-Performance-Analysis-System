@@ -4,6 +4,7 @@ from sqlalchemy import func as sql_func
 from fastapi import HTTPException
 
 from app.models.marks import Marks, GPARecord
+from app.models.subject import Subject
 from app.utils.gpa_calculator import (
     score_to_letter_grade, calculate_weighted_score, calculate_gpa
 )
@@ -53,6 +54,19 @@ def get_student_marks(db: Session, student_id: str, subject_id: str = None, mark
 
     records = query.all()
 
+    # FIX: batch-fetch subject info once so subject_code/subject_name can be
+    # populated below. Without this, the MarksSubjectBreakdown schema's
+    # subject_code/subject_name fields are promised but never filled in.
+    subject_ids = {r.subject_id for r in records}
+    subjects = db.query(Subject).filter(Subject.id.in_(subject_ids)).all() if subject_ids else []
+    subject_lookup = {
+        str(s.id): {"subject_code": s.subject_code, "subject_name": s.subject_name}
+        for s in subjects
+    }
+
+    def _subject_info(sid):
+        return subject_lookup.get(str(sid), {"subject_code": None, "subject_name": None})
+
     by_subject_map = {}
     for r in records:
         sid = str(r.subject_id)
@@ -93,8 +107,12 @@ def get_student_marks(db: Session, student_id: str, subject_id: str = None, mark
         )
         current_grade = score_to_letter_grade(current_percentage)
 
+        info = _subject_info(sid)
+
         marks_list.append({
             "subject_id": sid,
+            "subject_code": info["subject_code"],
+            "subject_name": info["subject_name"],
             "quiz": data["quiz"],
             "assignment": data["assignment"],
             "midterm": data["midterm"],
