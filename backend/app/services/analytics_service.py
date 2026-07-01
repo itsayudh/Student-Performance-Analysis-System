@@ -10,7 +10,16 @@ from app.models.marks import Marks, GPARecord
 from app.models.attendance import Attendance
 from app.models.prediction import Prediction
 from app.models.notification import Notification
-from app.utils.gpa_calculator import score_to_letter_grade
+from app.utils.gpa_calculator import score_to_letter_grade, score_to_grade_point
+
+
+# Single source of truth for the grade distribution buckets.
+# Must match the 9-tier scale in gpa_calculator.py / predictor.py exactly.
+GRADE_KEYS = ["A+", "A", "B+", "B", "C+", "C", "D+", "D", "E"]
+
+
+def _empty_grade_dist():
+    return {k: 0 for k in GRADE_KEYS}
 
 
 def get_student_analytics(db: Session, student_id: str):
@@ -53,7 +62,7 @@ def get_student_analytics(db: Session, student_id: str):
     for sid, scores in subject_scores.items():
         avg_score = round(sum(scores) / len(scores), 2)
 
-        # FIX: class_avg must come from ALL students enrolled in this subject,
+        # class_avg must come from ALL students enrolled in this subject,
         # not from this same student's own scores. Query unfiltered by student_id.
         all_subject_marks = db.query(Marks).filter(Marks.subject_id == sid).all()
         all_pcts = [
@@ -62,8 +71,8 @@ def get_student_analytics(db: Session, student_id: str):
         ]
         class_avg = round(sum(all_pcts) / len(all_pcts), 2) if all_pcts else 0.0
 
-        # FIX: rank was hardcoded None. Now computed from per-student averages
-        # within this subject, ranked highest to lowest.
+        # rank computed from per-student averages within this subject,
+        # ranked highest to lowest.
         per_student = {}
         for m in all_subject_marks:
             if m.max_score > 0:
@@ -85,6 +94,7 @@ def get_student_analytics(db: Session, student_id: str):
         subject_performance.append({
             "subject": sid,
             "score": avg_score,
+            "grade": score_to_letter_grade(avg_score),
             "class_avg": class_avg,
             "rank": rank
         })
@@ -117,18 +127,25 @@ def get_class_analytics(db: Session, class_id: str):
 
     marks_records = db.query(Marks).filter(Marks.class_id == class_id).all()
 
-    grade_dist = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
+    grade_dist = _empty_grade_dist()
     all_scores = []
+    all_grade_points = []
 
     for m in marks_records:
         pct = (m.score / m.max_score * 100) if m.max_score > 0 else 0.0
         all_scores.append(pct)
-        grade = score_to_letter_grade(pct)
-        grade_key = grade[0]   # first letter, since A+ -> A bucket
-        if grade_key in grade_dist:
-            grade_dist[grade_key] += 1
 
-    class_gpa_avg = round(sum(all_scores) / len(all_scores) / 25, 2) if all_scores else 0.0
+        grade = score_to_letter_grade(pct)
+        if grade in grade_dist:
+            grade_dist[grade] += 1
+
+        all_grade_points.append(score_to_grade_point(pct))
+
+    # class_gpa_avg now derived from actual grade points (9-tier scale),
+    # not a linear percentage/25 approximation.
+    class_gpa_avg = round(
+        sum(all_grade_points) / len(all_grade_points), 2
+    ) if all_grade_points else 0.0
 
     attendance_records = db.query(Attendance).filter(Attendance.class_id == class_id).all()
     total_att = len(attendance_records)
@@ -161,7 +178,7 @@ def get_subject_analytics(db: Session, subject_id: str):
 
     marks_records = db.query(Marks).filter(Marks.subject_id == subject_id).all()
 
-    grade_dist = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
+    grade_dist = _empty_grade_dist()
     all_scores = []
     pass_count = 0
 
@@ -170,10 +187,10 @@ def get_subject_analytics(db: Session, subject_id: str):
         all_scores.append(pct)
         if pct >= 60:
             pass_count += 1
+
         grade = score_to_letter_grade(pct)
-        grade_key = grade[0]
-        if grade_key in grade_dist:
-            grade_dist[grade_key] += 1
+        if grade in grade_dist:
+            grade_dist[grade] += 1
 
     class_average = round(sum(all_scores) / len(all_scores), 2) if all_scores else 0.0
     pass_rate = round((pass_count / len(all_scores) * 100), 2) if all_scores else 0.0
