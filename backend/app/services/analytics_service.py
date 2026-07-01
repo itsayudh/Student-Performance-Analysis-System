@@ -52,11 +52,41 @@ def get_student_analytics(db: Session, student_id: str):
     subject_performance = []
     for sid, scores in subject_scores.items():
         avg_score = round(sum(scores) / len(scores), 2)
+
+        # FIX: class_avg must come from ALL students enrolled in this subject,
+        # not from this same student's own scores. Query unfiltered by student_id.
+        all_subject_marks = db.query(Marks).filter(Marks.subject_id == sid).all()
+        all_pcts = [
+            (m.score / m.max_score * 100)
+            for m in all_subject_marks if m.max_score > 0
+        ]
+        class_avg = round(sum(all_pcts) / len(all_pcts), 2) if all_pcts else 0.0
+
+        # FIX: rank was hardcoded None. Now computed from per-student averages
+        # within this subject, ranked highest to lowest.
+        per_student = {}
+        for m in all_subject_marks:
+            if m.max_score > 0:
+                sid_key = str(m.student_id)
+                pct = m.score / m.max_score * 100
+                per_student.setdefault(sid_key, []).append(pct)
+        student_avgs = {
+            sid_key: sum(p) / len(p) for sid_key, p in per_student.items()
+        }
+        sorted_students = sorted(
+            student_avgs.items(), key=lambda x: x[1], reverse=True
+        )
+        rank = next(
+            (i + 1 for i, (sid_key, _) in enumerate(sorted_students)
+             if sid_key == str(student_id)),
+            None
+        )
+
         subject_performance.append({
             "subject": sid,
             "score": avg_score,
-            "class_avg": avg_score,
-            "rank": None
+            "class_avg": class_avg,
+            "rank": rank
         })
 
     latest_prediction = db.query(Prediction).filter(
