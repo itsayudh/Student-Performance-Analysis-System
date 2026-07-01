@@ -24,3 +24,11 @@ pytest tests/ml/test_ml_predictor.py -v
 
 low risk student id  62f71aa5-d621-4882-a99b-490e52ce7a31
 high risk student id da7e6e8e-778b-497b-913b-22d17c3173f5
+
+
+creating the react environment
+npm create vite@latest frontend -- --template react
+
+run frontend
+cd frontend
+npm run dev
