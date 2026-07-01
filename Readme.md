@@ -32,3 +32,6 @@ npm create vite@latest frontend -- --template react
 run frontend
 cd frontend
 npm run dev
+
+when you have branch conflit use this:
+:wq
