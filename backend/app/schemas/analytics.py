@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class GPATrendItem(BaseModel):
@@ -15,6 +15,7 @@ class AttendanceTrendItem(BaseModel):
 class SubjectPerformanceItem(BaseModel):
     subject: str
     score: float
+    grade: Optional[str] = None
     class_avg: float
     rank: Optional[int] = None
 
@@ -35,12 +36,12 @@ class StudentAnalyticsResponse(BaseModel):
     risk_assessment: RiskAssessment
 
 
-class GradeDistribution(BaseModel):
-    A: int = 0
-    B: int = 0
-    C: int = 0
-    D: int = 0
-    F: int = 0
+# Grade distribution now uses the 9-tier SPAS scale:
+# A+, A, B+, B, C+, C, D+, D, E
+# A Dict is used instead of fixed fields because "A+" is not a valid
+# Python identifier, and this avoids hardcoding the scale in two places
+# (schema + analytics_service.py) that can drift out of sync again.
+GradeDistribution = Dict[str, int]
 
 
 class ClassAnalyticsResponse(BaseModel):
