@@ -3,14 +3,15 @@ import api from "../services/api";
 
 // Fetches a student's full attendance history + summary.
 // Matches GET /attendance/student/{student_id} exactly —
-// response shape: { student_id, records: [{date, subject_id, status}],
-//                    summary: { total_days, present, absent, late,
-//                               overall_percentage, by_subject: [...] } }
-//
-// Optional filters match the query params your friend's endpoint supports:
-// subjectId, startDate, endDate, status ("PRESENT" | "ABSENT" | "LATE")
-//
-// Usage: const { records, summary, loading, error, refetch } = useAttendance(studentId);
+// response shape: {
+//   student_id,
+//   records: [{ date, subject_id, subject_code, subject_name, status }],
+//   summary: {
+//     total_days, present, absent, late, overall_percentage,
+//     by_subject: [{ subject_id, subject_code, subject_name, percentage, status }]
+//   }
+// }
+
 export function useAttendance(studentId, filters = {}) {
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState(null);
