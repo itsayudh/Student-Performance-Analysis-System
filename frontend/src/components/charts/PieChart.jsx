@@ -9,8 +9,17 @@ import {
 
 // Default color sequence matching the design theme's risk/grade palette.
 // Used when the caller doesn't supply explicit colors per slice.
-const DEFAULT_COLORS = ["#1F9D63", "#4C5FD5", "#D89614", "#F0997B", "#D14343"];
-
+const DEFAULT_COLORS = [
+  "#1F9D63",   // A+  emerald
+  "#2ECC71",   // A   lighter emerald
+  "#4C5FD5",   // B+  indigo
+  "#7B8FE8",   // B   lighter indigo
+  "#D89614",   // C+  amber
+  "#F0B429",   // C   lighter amber
+  "#F0997B",   // D+  salmon
+  "#D14343",   // D   crimson
+  "#A12D2D",   // E   dark crimson
+];
 // Generic pie/donut chart for proportional data
 // (grade distribution, pass/fail ratio, etc).
 //
