@@ -22,7 +22,8 @@ from app.api.v1 import marks
 from app.api.v1 import analytics
 from app.api.v1 import reports
 from app.api.v1 import imports
-
+from app.api.v1 import classes
+from app.api.v1 import subjects
 
 
 # ── FastAPI app instance ───────────────────────────────────────────────────────
@@ -67,7 +68,8 @@ app.include_router(marks.router)
 app.include_router(analytics.router)
 app.include_router(reports.router)
 app.include_router(imports.router)
-
+app.include_router(classes.router)
+app.include_router(subjects.router)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────
