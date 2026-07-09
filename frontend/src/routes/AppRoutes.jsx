@@ -8,6 +8,8 @@ import TeacherLayout from "../layouts/TeacherLayout";
 import StudentLayout from "../layouts/StudentLayout";
 import { useAuthContext } from "../contexts/AuthContext";
 
+
+
 // TODO: replace each placeholder below with the real page import once built
 // e.g. import LoginPage from "../pages/auth/LoginPage";
 function Placeholder({ label }) {
@@ -18,6 +20,7 @@ function Placeholder({ label }) {
 function FakeLoginTestOnly() {
   const { login } = useAuthContext();
   const navigate = useNavigate();
+  
 
   const loginAs = (role) => {
     login("fake-token", { role, email: `${role.toLowerCase()}@test.com` });
