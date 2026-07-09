@@ -9,6 +9,14 @@ import StudentLayout from "../layouts/StudentLayout";
 import { useAuthContext } from "../contexts/AuthContext";
 
 
+//add by ayudh
+import AnalyticsPage from "../pages/admin/AnalyticsPage";
+import PredictionsPage from "../pages/admin/PredictionsPage";
+import StudentPerformancePage from "../pages/teacher/StudentPerformancePage";
+import EarlyWarningPage from "../pages/teacher/EarlyWarningPage";
+import MyPerformancePage from "../pages/student/MyPerformancePage";
+import RecommendationsPage from "../pages/student/RecommendationsPage";
+import { login as apiLogin } from "../services/authService";
 
 // TODO: replace each placeholder below with the real page import once built
 // e.g. import LoginPage from "../pages/auth/LoginPage";
@@ -16,25 +24,63 @@ function Placeholder({ label }) {
   return <h2>{label} — page not built yet</h2>;
 }
 
-// TEMPORARY — only for testing, remove before Layer E (real LoginPage.jsx)
+// // TEMPORARY — only for testing, remove before Layer E (real LoginPage.jsx)
+// function FakeLoginTestOnly() {
+//   const { login } = useAuthContext();
+//   const navigate = useNavigate();
+
+//   const loginAs = (role) => {
+//     login("fake-token", { role, email: `${role.toLowerCase()}@test.com` });
+//     navigate(`/${role.toLowerCase()}/dashboard`);
+//   };
+
+//   return (
+//     <div style={{ padding: 20 }}>
+//       <button onClick={() => loginAs("ADMIN")}>Login as Admin</button>{" "}
+//       <button onClick={() => loginAs("TEACHER")}>Login as Teacher</button>{" "}
+//       <button onClick={() => loginAs("STUDENT")}>Login as Student</button>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+////////////// Real token to the send to the backend/////////////////////
+// TEMPORARY — real-backend login for testing; Roshan's LoginPage.jsx
+// replaces this later.
 function FakeLoginTestOnly() {
   const { login } = useAuthContext();
   const navigate = useNavigate();
   
 
-  const loginAs = (role) => {
-    login("fake-token", { role, email: `${role.toLowerCase()}@test.com` });
-    navigate(`/${role.toLowerCase()}/dashboard`);
+ const loginAs = async (email, password) => {
+    try {
+      // authService.login does BOTH jobs: calls the backend AND
+      // registers the token with api.js so axios attaches it everywhere
+      const data = await apiLogin(email, password);
+      login(data.access_token, data.user); // fills AuthContext (guards/UI)
+      navigate(`/${data.user.role.toLowerCase()}/dashboard`);
+    } catch (err) {
+      alert(`Login failed (${err.response?.status ?? "network"})`);
+    }
   };
-
   return (
     <div style={{ padding: 20 }}>
-      <button onClick={() => loginAs("ADMIN")}>Login as Admin</button>{" "}
-      <button onClick={() => loginAs("TEACHER")}>Login as Teacher</button>{" "}
-      <button onClick={() => loginAs("STUDENT")}>Login as Student</button>
+      <button onClick={() => loginAs("admin@spas.com", "Admin1234")}>Admin</button>{" "}
+      <button onClick={() => loginAs("teacher@spas.com", "Teacher1234")}>Teacher</button>{" "}
+      <button onClick={() => loginAs("student@spas.com", "Student1234")}>Student</button>
     </div>
   );
 }
+  
+
+
+
+
+
 
 export default function AppRoutes() {
   return (
@@ -87,11 +133,11 @@ export default function AppRoutes() {
             />
             <Route
               path="/admin/analytics"
-              element={<Placeholder label="Analytics" />}
+              element={<AnalyticsPage/>}   //change here
             />
             <Route
               path="/admin/predictions"
-              element={<Placeholder label="Predictions" />}
+              element={<PredictionsPage/>}  //change here
             />
             <Route
               path="/admin/reports"
@@ -121,11 +167,11 @@ export default function AppRoutes() {
             />
             <Route
               path="/teacher/performance"
-              element={<Placeholder label="Student Performance" />}
+              element={<StudentPerformancePage/>}  //change here
             />
             <Route
               path="/teacher/early-warning"
-              element={<Placeholder label="Early Warning" />}
+              element={<EarlyWarningPage/>}  //change here
             />
           </Route>
         </Route>
@@ -147,11 +193,11 @@ export default function AppRoutes() {
             />
             <Route
               path="/student/performance"
-              element={<Placeholder label="My Performance" />}
+              element={<MyPerformancePage/>}  //change here
             />
             <Route
               path="/student/recommendations"
-              element={<Placeholder label="Recommendations" />}
+              element={<RecommendationsPage />}  //change here
             />
           </Route>
         </Route>

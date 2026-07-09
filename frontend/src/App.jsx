@@ -1,18 +1,18 @@
-// src/App.jsx
 import { BrowserRouter } from "react-router-dom";
-import { AppThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { AppThemeProvider } from "./contexts/ThemeContext";
+// src/App.jsx
 import AppRoutes from "./routes/AppRoutes";
 
 function App() {
   return (
-    <AppThemeProvider>
+    <BrowserRouter>
       <AuthProvider>
-        <BrowserRouter>
+        <AppThemeProvider>
           <AppRoutes />
-        </BrowserRouter>
+        </AppThemeProvider>
       </AuthProvider>
-    </AppThemeProvider>
+    </BrowserRouter>
   );
 }
 

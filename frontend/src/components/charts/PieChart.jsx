@@ -8,7 +8,6 @@ import {
 } from "recharts";
 
 // Default color sequence matching the design theme's risk/grade palette.
-// Used when the caller doesn't supply explicit colors per slice.
 const DEFAULT_COLORS = [
   "#1F9D63",   // A+  emerald
   "#2ECC71",   // A   lighter emerald
@@ -20,30 +19,33 @@ const DEFAULT_COLORS = [
   "#D14343",   // D   crimson
   "#A12D2D",   // E   dark crimson
 ];
-// Generic pie/donut chart for proportional data
-// (grade distribution, pass/fail ratio, etc).
+
+// Generic pie/donut chart for proportional data.
 //
-// Props:
-//   data    - array of objects, e.g. [{ name: "A", value: 18 }, { name: "B", value: 32 }, ...]
-//             NOTE: keys must be "name" and "value" — Recharts' Pie expects these
-//             by default. If your data comes back with different keys
-//             (like grade_distribution's { A: 18, B: 32, ... } object),
-//             transform it before passing in — see usage note below.
-//   colors  - optional array of hex colors, one per slice, in the same order as data
+// v2 layout note: the legend moved from the right side to BELOW the
+// chart. A vertical side legend works for 3-4 slices, but with the full
+// 9-grade scale it grew taller than the 220px container, stole width
+// from the pie, and clipped the circle. A bottom legend wraps
+// horizontally instead, so the donut always gets the full card width
+// regardless of slice count.
+//
+// Props: data [{ name, value }], colors (optional, per-slice)
 function PieChart({ data, colors = DEFAULT_COLORS }) {
   if (!data || data.length === 0) {
     return <p style={{ fontSize: "13px", color: "#6B7080" }}>No data available yet.</p>;
   }
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={300}>
       <RechartsPieChart>
         <Pie
           data={data}
           dataKey="value"
           nameKey="name"
-          innerRadius={45}
-          outerRadius={75}
+          cx="50%"
+          cy="45%"
+          innerRadius="48%"     /* was 55 (px) — now scales with the card */
+          outerRadius="78%"     /* was 90 (px) — now scales with the card */
           paddingAngle={2}
         >
           {data.map((entry, index) => (
@@ -58,9 +60,9 @@ function PieChart({ data, colors = DEFAULT_COLORS }) {
           }}
         />
         <Legend
-          layout="vertical"
-          align="right"
-          verticalAlign="middle"
+          layout="horizontal"
+          align="center"
+          verticalAlign="bottom"
           iconType="circle"
           iconSize={9}
           wrapperStyle={{ fontSize: "13px" }}

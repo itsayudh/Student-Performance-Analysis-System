@@ -11,6 +11,8 @@ from app.models.attendance import Attendance
 from app.models.prediction import Prediction
 from app.models.notification import Notification
 from app.utils.gpa_calculator import score_to_letter_grade, score_to_grade_point
+from app.models.enrollment import Enrollment
+from sqlalchemy import func
 
 
 # Single source of truth for the grade distribution buckets.
@@ -58,6 +60,14 @@ def get_student_analytics(db: Session, student_id: str):
         pct = (m.score / m.max_score * 100) if m.max_score > 0 else 0.0
         subject_scores.setdefault(sid, []).append(pct)
 
+    # Batch-resolve subject_id -> subject_code in ONE query (avoids the
+    # N+1 pattern; same approach as marks_service.py's subject lookup).
+    # The doc's Section 7.6 example shows "subject": "CS301" — the code,
+    # not the UUID — so this restores the documented contract.
+    subject_ids = list(subject_scores.keys())
+    subject_rows = db.query(Subject).filter(Subject.id.in_(subject_ids)).all()
+    subject_code_map = {str(s.id): s.subject_code for s in subject_rows}
+
     subject_performance = []
     for sid, scores in subject_scores.items():
         avg_score = round(sum(scores) / len(scores), 2)
@@ -92,7 +102,10 @@ def get_student_analytics(db: Session, student_id: str):
         )
 
         subject_performance.append({
-            "subject": sid,
+            # subject code per doc 7.6; falls back to the UUID if a mark
+            # references a subject missing from the subjects table —
+            # analytics should degrade, not crash, on one dirty row.
+            "subject": subject_code_map.get(sid, sid),
             "score": avg_score,
             "grade": score_to_letter_grade(avg_score),
             "class_avg": class_avg,
@@ -152,13 +165,44 @@ def get_class_analytics(db: Session, class_id: str):
     present_att = sum(1 for r in attendance_records if r.status == "PRESENT")
     attendance_rate = round((present_att / total_att * 100), 2) if total_att > 0 else 0.0
 
-    at_risk_count = db.query(Prediction).join(
-        Student, Prediction.student_id == Student.id
-    ).filter(
-        Prediction.risk_level.in_(["HIGH", "CRITICAL"])
-    ).count()
+    # Students who belong to THIS class, per the enrollments table —
+    # the documented source of class membership (doc 3.2.6). Everything
+    # class-scoped below derives from this list.
+    student_ids = [
+        row[0] for row in db.query(Enrollment.student_id).filter(
+            Enrollment.class_id == class_id,
+            Enrollment.status == "ACTIVE"
+        ).all()
+    ]
 
-    student_count = db.query(Student).filter(Student.is_active == True).count()
+    student_count = len(student_ids)
+
+    # At-risk = enrolled students whose LATEST prediction is HIGH/CRITICAL.
+    # Two-step pattern:
+    #   1. subquery: newest predicted_at per student (MAX + GROUP BY)
+    #   2. join back to predictions to grab exactly those newest rows,
+    #      then filter by risk level and count them.
+    latest_per_student = (
+        db.query(
+            Prediction.student_id,
+            func.max(Prediction.predicted_at).label("latest_at")
+        )
+        .filter(Prediction.student_id.in_(student_ids))
+        .group_by(Prediction.student_id)
+        .subquery()
+    )
+
+    at_risk_count = (
+        db.query(Prediction)
+        .join(
+            latest_per_student,
+            (Prediction.student_id == latest_per_student.c.student_id)
+            & (Prediction.predicted_at == latest_per_student.c.latest_at)
+        )
+        .filter(Prediction.risk_level.in_(["HIGH", "CRITICAL"]))
+        .count()
+    )
+
 
     return {
         "class_id": class_id,
@@ -231,9 +275,28 @@ def get_admin_dashboard(db: Session):
     present_att = sum(1 for r in attendance_records if r.status == "PRESENT")
     overall_attendance_rate = round((present_att / total_att * 100), 2) if total_att > 0 else 0.0
 
-    at_risk_students = db.query(Prediction).filter(
-        Prediction.risk_level.in_(["HIGH", "CRITICAL"])
-    ).count()
+    # At-risk = students whose LATEST prediction is HIGH/CRITICAL.
+    # Same latest-per-student pattern as get_class_analytics, but with
+    # NO class filter — the admin dashboard is institution-wide on purpose.
+    latest_per_student = (
+        db.query(
+            Prediction.student_id,
+            func.max(Prediction.predicted_at).label("latest_at")
+        )
+        .group_by(Prediction.student_id)
+        .subquery()
+    )
+
+    at_risk_students = (
+        db.query(Prediction)
+        .join(
+            latest_per_student,
+            (Prediction.student_id == latest_per_student.c.student_id)
+            & (Prediction.predicted_at == latest_per_student.c.latest_at)
+        )
+        .filter(Prediction.risk_level.in_(["HIGH", "CRITICAL"]))
+        .count()
+    )
 
     marks_records = db.query(Marks).filter(Marks.mark_type == "FINAL").all()
     pass_count = sum(
