@@ -35,3 +35,6 @@ npm run dev
 
 when you have branch conflit use this:
 :wq
+
+running the bat file(root dir) works only on cmd
+run_dev
