@@ -20,7 +20,16 @@ def generate_report(
     report_type = payload.get("report_type")
 
     if report_type == "STUDENT":
-        student_id = payload.get("student_id")
+        # OWNERSHIP CHECK: students may only generate their OWN report.
+        # Without this, any student can pull any other student's grades
+        # and risk data by changing the id in the payload (IDOR).
+        if current_user.role == "STUDENT":
+            if not current_user.student:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=403, detail="No student profile linked to this account")
+            student_id = str(current_user.student.id)
+        else:
+            student_id = payload.get("student_id")
         semester   = payload.get("semester")
         buffer = generate_student_report(db, student_id, str(current_user.id), semester)
         filename = f"student_report_{student_id}.pdf"

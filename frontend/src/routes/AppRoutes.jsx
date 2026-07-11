@@ -16,6 +16,15 @@ import StudentPerformancePage from "../pages/teacher/StudentPerformancePage";
 import EarlyWarningPage from "../pages/teacher/EarlyWarningPage";
 import MyPerformancePage from "../pages/student/MyPerformancePage";
 import RecommendationsPage from "../pages/student/RecommendationsPage";
+import MarksPage from "../pages/teacher/MarksPage";
+import MyMarksPage from "../pages/student/MyMarksPage";
+import AttendancePage from "../pages/teacher/AttendancePage";
+import MyAttendancePage from "../pages/student/MyAttendancePage";
+import MyClassesPage from "../pages/teacher/MyClassesPage";
+import ClassesPage from "../pages/admin/ClassesPage";
+import ReportsPage from "../pages/admin/ReportsPage";
+import TeacherDashboard from "../pages/teacher/TeacherDashboard";
+import StudentDashboard from "../pages/student/StudentDashboard";
 import { login as apiLogin } from "../services/authService";
 
 // TODO: replace each placeholder below with the real page import once built
@@ -129,7 +138,7 @@ export default function AppRoutes() {
             />
             <Route
               path="/admin/classes"
-              element={<Placeholder label="Classes" />}
+              element={<ClassesPage />}  
             />
             <Route
               path="/admin/analytics"
@@ -141,7 +150,7 @@ export default function AppRoutes() {
             />
             <Route
               path="/admin/reports"
-              element={<Placeholder label="Reports" />}
+              element={<ReportsPage />}  //change here
             />
           </Route>
         </Route>
@@ -151,19 +160,19 @@ export default function AppRoutes() {
           <Route element={<TeacherLayout />}>
             <Route
               path="/teacher/dashboard"
-              element={<Placeholder label="Teacher Dashboard" />}
+              element={<TeacherDashboard />}  //change here
             />
             <Route
               path="/teacher/classes"
-              element={<Placeholder label="My Classes" />}
+              element={<MyClassesPage />}  //change here
             />
             <Route
               path="/teacher/attendance"
-              element={<Placeholder label="Attendance" />}
+              element={<AttendancePage />}  //change here
             />
             <Route
               path="/teacher/marks"
-              element={<Placeholder label="Marks" />}
+              element={<MarksPage />}  //change here
             />
             <Route
               path="/teacher/performance"
@@ -181,15 +190,15 @@ export default function AppRoutes() {
           <Route element={<StudentLayout />}>
             <Route
               path="/student/dashboard"
-              element={<Placeholder label="Student Dashboard" />}
+              element={<StudentDashboard />}  //change here
             />
             <Route
               path="/student/attendance"
-              element={<Placeholder label="My Attendance" />}
+              element={<MyAttendancePage />}  //change here
             />
             <Route
               path="/student/marks"
-              element={<Placeholder label="My Marks" />}
+              element={<MyMarksPage />}  //change here
             />
             <Route
               path="/student/performance"

@@ -25,16 +25,34 @@ def login_user(email: str, password: str, db: Session) -> dict:
     access_token  = create_access_token(data={"sub": str(user.id), "role": user.role})
     refresh_token = create_refresh_token(data={"sub": str(user.id), "role": user.role})
 
+    # Build the user payload. Two enrichments over the bare id/email/role:
+    #  - full_name: promised by doc Section 7.1's response example,
+    #    never implemented until now. Pulled from the role's profile row.
+    #  - student_id (STUDENT role only): concluded with Roshan — the
+    #    frontend needs students.id for analytics/predictions/
+    #    recommendations endpoints, and users.id != students.id.
+    #    Uses the User.student / User.teacher relationships (uselist=False),
+    #    so no extra explicit query is needed.
+    user_payload = {
+        "id":        str(user.id),
+        "email":     user.email,
+        "role":      user.role,
+        "full_name": None,
+    }
+
+    if user.role == "STUDENT" and user.student:
+        user_payload["student_id"] = str(user.student.id)
+        user_payload["full_name"]  = f"{user.student.first_name} {user.student.last_name}"
+    elif user.role == "TEACHER" and user.teacher:
+        user_payload["teacher_id"] = str(user.teacher.id)
+        user_payload["full_name"]  = f"{user.teacher.first_name} {user.teacher.last_name}"
+
     return {
         "access_token":  access_token,
         "refresh_token": refresh_token,
         "token_type":    "bearer",
         "expires_in":    900,
-        "user": {
-            "id":        str(user.id),
-            "email":     user.email,
-            "role":      user.role,
-        }
+        "user":          user_payload
     }
 
 

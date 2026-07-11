@@ -24,11 +24,11 @@ from app.models.attendance import Attendance
 db = SessionLocal()
 
 # ── 1. Find the existing student and a user to be "recorded_by" ──────────
-student = db.query(Student).filter(Student.student_code == "STU-2024-001").first()
+student = db.query(Student).filter(Student.student_code == "STU-2025-001").first()
 recorder = db.query(User).filter(User.email == "teacher@spas.com").first()
 
 if not student or not recorder:
-    raise SystemExit("Student STU-2024-001 or teacher@spas.com not found — fix emails/codes at the top of this script.")
+    raise SystemExit("Student STU-2025-001 or teacher@spas.com not found — fix emails/codes at the top of this script.")
 
 student_code = student.student_code   # capture BEFORE commit expires it
 
