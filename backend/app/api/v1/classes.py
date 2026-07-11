@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
 from app.api.deps import require_role
-from app.services.class_service import get_classes, get_class_by_id
+from app.services.class_service import (
+    get_classes, get_class_by_id, get_class_students,
+    create_class, update_class, delete_class,get_class_subjects, assign_subject_to_class
+)
+from app.schemas.class_ import ClassCreate, ClassUpdate, ClassSubjectAssign
 
 router = APIRouter(prefix="/classes", tags=["Classes"])
 
@@ -39,3 +43,56 @@ def get_class(
     current_user = Depends(require_role("ADMIN", "TEACHER"))
 ):
     return get_class_by_id(db, class_id)
+
+@router.get("/{class_id}/students")
+def class_students(
+    class_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN", "TEACHER"))
+):
+    return get_class_students(db, class_id)
+
+@router.post("")
+def add_class(
+    payload: ClassCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return create_class(db, payload.dict())
+
+
+@router.put("/{class_id}")
+def edit_class(
+    class_id: str,
+    payload: ClassUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return update_class(db, class_id, payload.dict(exclude_unset=True))
+
+
+@router.delete("/{class_id}")
+def remove_class(
+    class_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return delete_class(db, class_id)
+
+@router.post("/{class_id}/subjects")
+def add_class_subject(
+    class_id: str,
+    payload: ClassSubjectAssign,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return assign_subject_to_class(db, class_id, payload.subject_id, payload.teacher_id)
+
+
+@router.get("/{class_id}/subjects")
+def class_subjects(
+    class_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN", "TEACHER"))
+):
+    return get_class_subjects(db, class_id)

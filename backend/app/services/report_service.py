@@ -21,6 +21,41 @@ from app.models.prediction import Prediction
 from app.models.recommendation import Recommendation
 from app.models.attendance import Attendance
 from app.models.report import Report
+import matplotlib
+matplotlib.use("Agg")   # headless backend — MUST be set before pyplot import;
+                        # without it matplotlib tries to open a GUI window
+                        # inside the server process and crashes
+import matplotlib.pyplot as plt
+from reportlab.platypus import Image
+
+
+def _gpa_trend_chart(gpa_records) -> BytesIO:
+    """
+    Renders the GPA trend as a PNG in memory for embedding in the PDF.
+    Returns None with fewer than 2 records — a one-point 'trend' is
+    meaningless and a blank chart looks broken.
+    """
+    if len(gpa_records) < 2:
+        return None
+
+    labels = [f"{r.semester}\n{r.academic_year}" for r in gpa_records]
+    values = [r.gpa for r in gpa_records]
+
+    fig, ax = plt.subplots(figsize=(6.2, 2.4))
+    ax.plot(labels, values, marker="o", color="#4C5FD5", linewidth=2)
+    ax.set_ylim(0, 4)                    # honest axis, same rule as the
+    ax.set_ylabel("GPA", fontsize=9)     # frontend LineChart's yDomain
+    ax.grid(True, alpha=0.3)
+    ax.tick_params(labelsize=8)
+    fig.tight_layout()
+
+    img = BytesIO()
+    fig.savefig(img, format="png", dpi=150)
+    plt.close(fig)   # CRITICAL: without this, every report generation
+                     # leaks a figure and server memory slowly grows
+    img.seek(0)
+    return img
+
 
 
 def generate_student_report(db: Session, student_id: str, generated_by: str, semester: str = None) -> BytesIO:
@@ -58,6 +93,10 @@ def generate_student_report(db: Session, student_id: str, generated_by: str, sem
         GPARecord.student_id == student_id
     ).order_by(GPARecord.calculated_at.desc()).first()
 
+    gpa_series = db.query(GPARecord).filter(
+        GPARecord.student_id == student_id
+    ).order_by(GPARecord.calculated_at.asc()).all()
+
     elements.append(Paragraph("Academic Summary", styles["Heading2"]))
     gpa_data = [
         ["Current GPA", str(gpa_record.gpa) if gpa_record else "N/A"],
@@ -71,6 +110,12 @@ def generate_student_report(db: Session, student_id: str, generated_by: str, sem
     ]))
     elements.append(gpa_table)
     elements.append(Spacer(1, 0.7*cm))
+
+    chart_img = _gpa_trend_chart(gpa_series)
+    if chart_img:
+        elements.append(Paragraph("GPA Trend", styles["Heading2"]))
+        elements.append(Image(chart_img, width=16*cm, height=6*cm))
+        elements.append(Spacer(1, 0.7*cm))
 
     attendance_records = db.query(Attendance).filter(Attendance.student_id == student_id).all()
     total_att = len(attendance_records)
