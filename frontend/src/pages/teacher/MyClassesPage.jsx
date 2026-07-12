@@ -7,6 +7,8 @@ import Alert from "@mui/material/Alert";
 import Chip from "@mui/material/Chip";
 import api from "../../services/api";
 import { useAuthContext } from "../../contexts/AuthContext";
+import { Panel, PageHeader } from "../../components/gridline";
+import { numSx } from "../../theme/tokens";
 
 // Teacher portal — My Classes: the classes this teacher teaches in
 // (ClassSubject assignments) or homerooms, via the new
@@ -57,9 +59,7 @@ export default function MyClassesPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        My Classes
-      </Typography>
+      <PageHeader title="My Classes" />
 
       {classes.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
@@ -70,9 +70,9 @@ export default function MyClassesPage() {
         <Grid container spacing={2}>
           {classes.map((c) => (
             <Grid item xs={12} sm={6} md={4} key={c.id}>
-              <Box sx={cardSx}>
+              <Panel sx={{ height: "100%" }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="subtitle1">{c.class_code}</Typography>
+                  <Typography variant="subtitle1" sx={numSx}>{c.class_code}</Typography>
                   {c.is_homeroom && (
                     <Chip size="small" label="Homeroom" color="primary" />
                   )}
@@ -83,7 +83,7 @@ export default function MyClassesPage() {
                 <Typography variant="caption" color="text.secondary">
                   {c.department} · Semester {c.semester} · {c.academic_year}
                 </Typography>
-              </Box>
+              </Panel>
             </Grid>
           ))}
         </Grid>
@@ -91,11 +91,3 @@ export default function MyClassesPage() {
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-  height: "100%",
-};

@@ -11,6 +11,7 @@ import OnlinePredictionIcon from "@mui/icons-material/OnlinePrediction";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
+import { color } from "../theme/tokens";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/admin/dashboard", icon: <DashboardIcon /> },
@@ -29,8 +30,8 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <Navbar title="SPAS — Admin Portal" />
-      <Sidebar items={NAV_ITEMS} />
+      <Navbar title="ADMIN PORTAL" accent={color.roleAdmin} />
+      <Sidebar items={NAV_ITEMS} accent={color.roleAdmin} />
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar /> {/* spacer below fixed AppBar */}
         <Outlet />

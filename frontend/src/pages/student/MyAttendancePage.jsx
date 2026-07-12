@@ -15,6 +15,8 @@ import { useAttendance } from "../../hooks/useAttendance";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { formatPercentage } from "../../utils/formatters";
 import api from "../../services/api";
+import { Panel, SectionHeading, PageHeader, ScaleMark, PERCENT_ZONES } from "../../components/gridline";
+import { numSx } from "../../theme/tokens";
 
 // Student portal — My Attendance: summary KPIs, per-subject breakdown,
 // and the calendar heatmap with month navigation.
@@ -81,7 +83,7 @@ export default function MyAttendancePage() {
     setHeatmapMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
 
   const KPIS = [
-    { label: "Overall", value: formatPercentage(summary.overall_percentage) },
+    { label: "Overall", value: formatPercentage(summary.overall_percentage), isPercentage: true, rawValue: summary.overall_percentage },
     { label: "Days recorded", value: summary.total_days },
     { label: "Present", value: summary.present },
     { label: "Absent", value: summary.absent },
@@ -90,35 +92,40 @@ export default function MyAttendancePage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        My Attendance
-        <TextField
-        select
-        size="small"
-        label="Subject"
-        value={subjectId}
-        onChange={(e) => setSubjectId(e.target.value)}
-        sx={{ width: 280, mb: 3 }}
-      >
-        <MenuItem value="">All subjects (overall)</MenuItem>
-        {subjects.map((s) => (
-          <MenuItem key={s.id} value={s.id}>
-            {s.subject_name} ({s.subject_code})
-          </MenuItem>
-        ))}
-      </TextField>
-      </Typography>
+      <PageHeader
+        title="My Attendance"
+        action={
+          <TextField
+            select
+            size="small"
+            label="Subject"
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            sx={{ width: 280 }}
+          >
+            <MenuItem value="">All subjects (overall)</MenuItem>
+            {subjects.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.subject_name} ({s.subject_code})
+              </MenuItem>
+            ))}
+          </TextField>
+        }
+      />
 
       {/* ── KPI row ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {KPIS.map((kpi) => (
           <Grid item xs={6} sm={2.4} key={kpi.label}>
-            <Box sx={cardSx}>
+            <Panel>
               <Typography variant="body2" color="text.secondary">
                 {kpi.label}
               </Typography>
-              <Typography variant="h5">{kpi.value}</Typography>
-            </Box>
+              <Typography variant="h5" sx={numSx}>{kpi.value}</Typography>
+              {kpi.isPercentage && (
+                <ScaleMark value={kpi.rawValue} zones={PERCENT_ZONES} />
+              )}
+            </Panel>
           </Grid>
         ))}
       </Grid>
@@ -126,9 +133,9 @@ export default function MyAttendancePage() {
       <Grid container spacing={2}>
         {/* ── Heatmap with month navigation ── */}
         <Grid item xs={12} md={6}>
-          <Box sx={cardSx}>
+          <Panel>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-              <Typography variant="subtitle1">Calendar</Typography>
+              <SectionHeading>Calendar</SectionHeading>
               <Box>
                 <IconButton size="small" onClick={() => shiftMonth(-1)}>
                   <ChevronLeftIcon fontSize="small" />
@@ -139,15 +146,15 @@ export default function MyAttendancePage() {
               </Box>
             </Box>
             <AttendanceHeatmap records={records} month={heatmapMonth} />
-          </Box>
+          </Panel>
         </Grid>
 
         {/* ── Per-subject breakdown ── */}
         <Grid item xs={12} md={6}>
-          <Box sx={cardSx}>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+          <Panel>
+            <SectionHeading>
               By Subject
-            </Typography>
+            </SectionHeading>
             {summary.by_subject.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
                 No subject records yet.
@@ -166,7 +173,7 @@ export default function MyAttendancePage() {
                 >
                   <Typography variant="body2">{sub.subject_code}</Typography>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    <Typography variant="body2" sx={{ ...numSx, fontWeight: 600 }}>
                       {formatPercentage(sub.percentage)}
                     </Typography>
                     {sub.status === "WARNING" && (
@@ -176,16 +183,9 @@ export default function MyAttendancePage() {
                 </Box>
               ))
             )}
-          </Box>
+          </Panel>
         </Grid>
       </Grid>
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};

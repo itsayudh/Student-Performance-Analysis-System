@@ -27,6 +27,8 @@ import {
   formatPercentage,
   gradeColor,
 } from "../../utils/formatters";
+import { Panel, SectionHeading, PageHeader, ScaleMark, GPA_ZONES, PERCENT_ZONES,TickerNumber } from "../../components/gridline";
+import { numSx } from "../../theme/tokens";
 
 // Teacher portal — Student Performance page: pick a student, see the
 // full picture (analytics, marks, attendance heatmap, latest prediction).
@@ -90,7 +92,7 @@ export default function StudentPerformancePage() {
     setError(null);
 
     getStudentAnalytics(studentId)
-      .then((res) => setAnalytics(res.data))
+      .then((res) => res.data && setAnalytics(res.data))
       .catch((err) => setError(err))
       .finally(() => setAnalyticsLoading(false));
   }, [studentId]);
@@ -110,21 +112,22 @@ export default function StudentPerformancePage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Student Performance
-      </Typography>
-
-      <Autocomplete
-        sx={{ width: 340, mb: 3 }}
-        options={students}
-        loading={studentsLoading}
-        value={selectedStudent}
-        onChange={(_, value) => setSelectedStudent(value)}
-        getOptionLabel={(s) => `${s.first_name} ${s.last_name} (${s.student_code})`}
-        isOptionEqualToValue={(opt, val) => opt.id === val.id}
-        renderInput={(params) => (
-          <TextField {...params} label="Select student" size="small" />
-        )}
+      <PageHeader
+        title="Student Performance"
+        action={
+          <Autocomplete
+            sx={{ width: 340 }}
+            options={students}
+            loading={studentsLoading}
+            value={selectedStudent}
+            onChange={(_, value) => setSelectedStudent(value)}
+            getOptionLabel={(s) => `${s.first_name} ${s.last_name} (${s.student_code})`}
+            isOptionEqualToValue={(opt, val) => opt.id === val.id}
+            renderInput={(params) => (
+              <TextField {...params} label="Select student" size="small" />
+            )}
+          />
+        }
       />
 
       {error && (
@@ -144,54 +147,73 @@ export default function StudentPerformancePage() {
           {/* ── KPI row: analytics + attendance summary side by side ── */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid item xs={6} sm={3}>
-              <Box sx={cardSx}>
+              <Panel>
                 <Typography variant="body2" color="text.secondary">
                   Current GPA
                 </Typography>
-                <Typography variant="h4">
-                  {analyticsLoading ? "…" : formatGPA(analytics?.current_gpa)}
-                </Typography>
-              </Box>
+                {analyticsLoading ? (
+                  <Typography variant="h4" sx={numSx}>…</Typography>
+                ) : (
+                  <TickerNumber value={analytics?.current_gpa ?? 0} format={formatGPA} />
+                )}
+                {!analyticsLoading && analytics?.current_gpa !== undefined && (
+                  <ScaleMark value={analytics.current_gpa} zones={GPA_ZONES} max={4} />
+                )}
+              </Panel>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={cardSx}>
+              <Panel>
                 <Typography variant="body2" color="text.secondary">
                   CGPA
                 </Typography>
-                <Typography variant="h4">
-                  {analyticsLoading ? "…" : formatGPA(analytics?.cgpa)}
-                </Typography>
-              </Box>
+                {analyticsLoading ? (
+                  <Typography variant="h4" sx={numSx}>…</Typography>
+                ) : (
+                  <TickerNumber value={analytics?.cgpa ?? 0} format={formatGPA} />
+                )}
+                {!analyticsLoading && analytics?.cgpa !== undefined && (
+                  <ScaleMark value={analytics.cgpa} zones={GPA_ZONES} max={4} />
+                )}
+              </Panel>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={cardSx}>
+              <Panel>
                 <Typography variant="body2" color="text.secondary">
                   Attendance
                 </Typography>
-                <Typography variant="h4">
-                  {formatPercentage(attendanceSummary?.overall_percentage)}
+                <Typography variant="h4" sx={numSx}>
+                  {attendanceSummary ? (
+                  <TickerNumber value={attendanceSummary.overall_percentage} format={formatPercentage} />
+                ) : (
+                  <Typography variant="h4" sx={numSx}>…</Typography>
+                )}
                 </Typography>
-              </Box>
+                {attendanceSummary?.overall_percentage !== undefined && (
+                  <ScaleMark value={attendanceSummary.overall_percentage} zones={PERCENT_ZONES} />
+                )}
+              </Panel>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Box sx={cardSx}>
+              <Panel>
                 <Typography variant="body2" color="text.secondary">
                   Days recorded
                 </Typography>
-                <Typography variant="h4">
-                  {attendanceSummary?.total_days ?? "…"}
+                <Typography variant="h4" sx={numSx}>
+                  {attendanceSummary ? (
+                  <TickerNumber value={attendanceSummary.total_days} format={(n) => Math.round(n)} />
+                ) : (
+                  <Typography variant="h4" sx={numSx}>…</Typography>
+                )}
                 </Typography>
-              </Box>
+              </Panel>
             </Grid>
           </Grid>
 
           <Grid container spacing={2}>
             {/* ── GPA trend + radar (from analytics) ── */}
             <Grid item xs={12} md={6}>
-              <Box sx={cardSx}>
-                <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                  GPA Trend
-                </Typography>
+              <Panel>
+                <SectionHeading>GPA Trend</SectionHeading>
                 {analyticsLoading ? (
                   <CircularProgress size={24} />
                 ) : (
@@ -202,20 +224,18 @@ export default function StudentPerformancePage() {
                     yDomain={[0, 4]}
                   />
                 )}
-              </Box>
+              </Panel>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Box sx={cardSx}>
-                <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                  Student vs Class Average
-                </Typography>
+              <Panel>
+                <SectionHeading>Student vs Class Average</SectionHeading>
                 {analyticsLoading ? (
                   <CircularProgress size={24} />
                 ) : (
                   <RadarChart data={subjectData} />
                 )}
-              </Box>
+              </Panel>
             </Grid>
 
             {/* ── Attendance heatmap with month navigation ──
@@ -223,7 +243,7 @@ export default function StudentPerformancePage() {
                 records and the month; it builds the calendar and looks
                 up each day. No pre-filtering needed page-side. */}
             <Grid item xs={12} md={6}>
-              <Box sx={cardSx}>
+              <Panel>
                 <Box
                   sx={{
                     display: "flex",
@@ -232,7 +252,7 @@ export default function StudentPerformancePage() {
                     mb: 1.5,
                   }}
                 >
-                  <Typography variant="subtitle1">Attendance</Typography>
+                  <SectionHeading>Attendance</SectionHeading>
                   <Box>
                     <IconButton size="small" onClick={() => shiftMonth(-1)}>
                       <ChevronLeftIcon fontSize="small" />
@@ -246,27 +266,25 @@ export default function StudentPerformancePage() {
                   records={attendanceRecords}
                   month={heatmapMonth}
                 />
-              </Box>
+              </Panel>
             </Grid>
 
             {/* ── Latest prediction ── */}
             <Grid item xs={12} md={6}>
-              <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                Latest Prediction
-              </Typography>
-              {predictionLoading ? (
-                <CircularProgress size={24} />
-              ) : (
-                <PredictionCard prediction={prediction} />
-              )}
+              <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                <SectionHeading>Latest Prediction</SectionHeading>
+                {predictionLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  <PredictionCard prediction={prediction} />
+                )}
+              </Box>
             </Grid>
 
             {/* ── Marks breakdown table (from useMarks) ── */}
             <Grid item xs={12}>
-              <Box sx={cardSx}>
-                <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                  Marks by Subject
-                </Typography>
+              <Panel>
+                <SectionHeading>Marks by Subject</SectionHeading>
                 {marksLoading ? (
                   <CircularProgress size={24} />
                 ) : marks.length === 0 ? (
@@ -314,11 +332,11 @@ export default function StudentPerformancePage() {
                             <TableCell>
                               {m.subject_code || m.subject_name || m.subject_id.slice(0, 8)}
                             </TableCell>
-                            <TableCell>{formatPercentage(quizAvg)}</TableCell>
-                            <TableCell>{formatPercentage(assignAvg)}</TableCell>
-                            <TableCell>{pct(m.midterm)}</TableCell>
-                            <TableCell>{pct(m.final)}</TableCell>
-                            <TableCell>{formatPercentage(m.current_percentage)}</TableCell>
+                            <TableCell sx={numSx}>{formatPercentage(quizAvg)}</TableCell>
+                            <TableCell sx={numSx}>{formatPercentage(assignAvg)}</TableCell>
+                            <TableCell sx={numSx}>{pct(m.midterm)}</TableCell>
+                            <TableCell sx={numSx}>{pct(m.final)}</TableCell>
+                            <TableCell sx={numSx}>{formatPercentage(m.current_percentage)}</TableCell>
                             <TableCell
                               sx={{
                                 color: gradeColor(m.current_grade),
@@ -333,7 +351,7 @@ export default function StudentPerformancePage() {
                     </TableBody>
                   </Table>
                 )}
-              </Box>
+              </Panel>
             </Grid>
           </Grid>
         </>
@@ -341,10 +359,3 @@ export default function StudentPerformancePage() {
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};

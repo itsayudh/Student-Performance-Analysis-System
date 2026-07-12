@@ -6,6 +6,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { Link, useLocation } from "react-router-dom";
+import { color } from "../../theme/tokens";
 
 const DRAWER_WIDTH = 240;
 
@@ -19,7 +20,7 @@ const DRAWER_WIDTH = 240;
  * Active-route highlighting comes from useLocation, so the sidebar itself
  * knows which item to light up — no prop needed for that.
  */
-export default function Sidebar({ items }) {
+export default function Sidebar({ items, accent = color.ultramarine }) {
   const location = useLocation();
 
   // A nav item is "active" if the current URL starts with its path.
@@ -36,6 +37,8 @@ export default function Sidebar({ items }) {
         [`& .MuiDrawer-paper`]: {
           width: DRAWER_WIDTH,
           boxSizing: "border-box",
+          borderRight: `1px solid ${color.gridline}`,
+          backgroundColor: "background.paper",
         },
       }}
     >
@@ -48,11 +51,10 @@ export default function Sidebar({ items }) {
             to={item.path}
             selected={isActive(item.path)}
             sx={{
-              // Left accent bar on the active item
               "&.Mui-selected": {
-                borderLeft: 3,
-                borderColor: "primary.main",
-                bgcolor: "action.selected",
+                borderLeft: `3px solid ${accent}`,
+                backgroundColor: `${accent}1A`,
+                "& .MuiListItemIcon-root": { color: accent },
               },
             }}
           >

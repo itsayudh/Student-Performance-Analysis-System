@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { useThemeToggle } from "../../contexts/ThemeContext";
+import { color, font } from "../../theme/tokens";
 
 /**
  * Shared top bar for all three portals.
@@ -27,7 +28,7 @@ import { useThemeToggle } from "../../contexts/ThemeContext";
  * Everything else (user identity, logout, theme mode) comes from context,
  * because it's identical across portals — only the title differs.
  */
-export default function Navbar({ title }) {
+export default function Navbar({ title, accent = color.ultramarine }) {
   const { user, logout } = useAuthContext();
   const { mode, toggleTheme } = useThemeToggle();
   const navigate = useNavigate();
@@ -50,11 +51,21 @@ export default function Navbar({ title }) {
   return (
     <AppBar
       position="fixed"
-      sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+      sx={{
+        zIndex: (theme) => theme.zIndex.drawer + 1,
+        // GRIDLINE shell: paper bar with the portal's axis line beneath —
+        // role accent as a rule, not a slab.
+        backgroundColor: "background.paper",
+        color: "text.primary",
+        borderBottom: `2px solid ${accent}`,
+      }}
     >
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography variant="h6" noWrap>
-          {title}
+         <Typography variant="h6" noWrap sx={{ fontFamily: font.display, fontWeight: 700, letterSpacing: "-0.01em" }}>
+          SPAS
+          <Box component="span" sx={{ fontFamily: font.mono, fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.08em", color: "text.secondary", ml: 1.5 }}>
+            {title}
+          </Box>
         </Typography>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -68,7 +79,7 @@ export default function Navbar({ title }) {
           {/* User menu */}
           <Tooltip title="Account">
             <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: "secondary.main" }}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: accent }}>
                 {avatarLetter}
               </Avatar>
             </IconButton>

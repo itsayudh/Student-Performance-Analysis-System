@@ -14,6 +14,9 @@ import { getStudentRecommendations } from "../../services/recommendationService"
 import { useLatestPrediction } from "../../hooks/usePredictions";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { formatGPA, formatPercentage } from "../../utils/formatters";
+import { Panel, SectionHeading, PageHeader, ScaleMark, GPA_ZONES, PERCENT_ZONES, TickerNumber } from "../../components/gridline";
+import { numSx } from "../../theme/tokens";
+
 
 // Student portal — Dashboard: the landing summary.
 //
@@ -79,9 +82,7 @@ export default function StudentDashboard() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Welcome{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}
-      </Typography>
+      <PageHeader title={`Welcome${user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}`} />
 
       {/* Unread recommendations nudge — the one attention-grabber */}
       {unreadCount > 0 && (
@@ -100,37 +101,43 @@ export default function StudentDashboard() {
 
       {/* Headline numbers */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
+        
         <Grid item xs={6} sm={3}>
-          <Box sx={cardSx}>
+          <Panel>
             <Typography variant="body2" color="text.secondary">Current GPA</Typography>
-            <Typography variant="h4">{formatGPA(analytics.current_gpa)}</Typography>
-          </Box>
+            <TickerNumber value={analytics.current_gpa} format={formatGPA} />
+            {/* Add max={4} here */}
+            <ScaleMark value={analytics.current_gpa} zones={GPA_ZONES} max={4} />
+          </Panel>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Box sx={cardSx}>
+          <Panel>
             <Typography variant="body2" color="text.secondary">CGPA</Typography>
-            <Typography variant="h4">{formatGPA(analytics.cgpa)}</Typography>
-          </Box>
+            <TickerNumber value={analytics.cgpa} format={formatGPA} />
+            {/* Add max={4} here */}
+            <ScaleMark value={analytics.cgpa} zones={GPA_ZONES} max={4} />
+          </Panel>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Box sx={cardSx}>
+          <Panel>
             <Typography variant="body2" color="text.secondary">Attendance</Typography>
-            <Typography variant="h4">{formatPercentage(attendancePct)}</Typography>
-          </Box>
+            <TickerNumber value={attendancePct} format={formatPercentage} />
+            <ScaleMark value={attendancePct} zones={PERCENT_ZONES} />
+          </Panel>
         </Grid>
         <Grid item xs={6} sm={3}>
-          <Box sx={cardSx}>
+          <Panel>
             <Typography variant="body2" color="text.secondary">Risk level</Typography>
             <Box sx={{ mt: 0.5 }}>
               <RiskBadge level={analytics.risk_assessment.risk_level} />
             </Box>
-          </Box>
+          </Panel>
         </Grid>
       </Grid>
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Typography variant="subtitle1" sx={{ mb: 1.5 }}>Latest Prediction</Typography>
+          <SectionHeading>Latest Prediction</SectionHeading>
           {predictionLoading ? (
             <CircularProgress size={24} />
           ) : (
@@ -139,8 +146,8 @@ export default function StudentDashboard() {
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box sx={cardSx}>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>Explore</Typography>
+          <Panel>
+            <SectionHeading>Explore</SectionHeading>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <Button component={Link} to="/student/performance" size="small" sx={{ justifyContent: "flex-start" }}>
                 My Performance — charts & subject comparison
@@ -155,17 +162,9 @@ export default function StudentDashboard() {
                 Recommendations{unreadCount > 0 ? ` (${unreadCount} unread)` : ""}
               </Button>
             </Box>
-          </Box>
+          </Panel>
         </Grid>
       </Grid>
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-  height: "100%",
-};

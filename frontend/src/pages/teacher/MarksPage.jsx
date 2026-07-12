@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import MarksForm from "../../components/forms/MarksForm";
 import { recordMarks } from "../../services/marksService";
 import api from "../../services/api";
+import { Panel, PageHeader } from "../../components/gridline";
 
 // Teacher portal — bulk marks entry.
 //
@@ -85,9 +85,7 @@ export default function MarksPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Marks Entry
-      </Typography>
+      <PageHeader title="Marks Entry" />
 
       {result && (
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setResult(null)}>
@@ -100,14 +98,16 @@ export default function MarksPage() {
         </Alert>
       )}
 
-      <MarksForm
-        classes={classes}
-        subjects={subjects}
-        students={students}
-        onClassChange={handleClassChange}
-        loading={submitting}
-        onSubmit={handleSubmit}
-      />
+      <Panel>
+        <MarksForm
+          classes={classes}
+          subjects={subjects}
+          students={students}
+          onClassChange={handleClassChange}
+          loading={submitting}
+          onSubmit={handleSubmit}
+        />
+      </Panel>
     </Box>
   );
 }

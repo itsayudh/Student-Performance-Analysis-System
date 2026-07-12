@@ -7,18 +7,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { color, font,} from "../../theme/tokens";
+import { gradeScale } from "../../theme/tokens";
+import { chartAxisTick, chartGridStroke, chartTooltipStyle, chartSeriesColor, chartEmptyStyle } from "../../theme/chartTokens";
+
 // Default color sequence matching the design theme's risk/grade palette.
-const DEFAULT_COLORS = [
-  "#1F9D63",   // A+  emerald
-  "#2ECC71",   // A   lighter emerald
-  "#4C5FD5",   // B+  indigo
-  "#7B8FE8",   // B   lighter indigo
-  "#D89614",   // C+  amber
-  "#F0B429",   // C   lighter amber
-  "#F0997B",   // D+  salmon
-  "#D14343",   // D   crimson
-  "#A12D2D",   // E   dark crimson
-];
+const DEFAULT_COLORS = Object.values(gradeScale);
 
 // Generic pie/donut chart for proportional data.
 //
@@ -32,7 +26,7 @@ const DEFAULT_COLORS = [
 // Props: data [{ name, value }], colors (optional, per-slice)
 function PieChart({ data, colors = DEFAULT_COLORS }) {
   if (!data || data.length === 0) {
-    return <p style={{ fontSize: "13px", color: "#6B7080" }}>No data available yet.</p>;
+    return <p style={chartEmptyStyle}>No data available yet.</p>;
   }
 
   return (
@@ -53,11 +47,7 @@ function PieChart({ data, colors = DEFAULT_COLORS }) {
           ))}
         </Pie>
         <Tooltip
-          contentStyle={{
-            fontSize: "12px",
-            borderRadius: "8px",
-            border: "1px solid #E4E6EB",
-          }}
+          contentStyle={chartTooltipStyle}
         />
         <Legend
           layout="horizontal"
@@ -65,7 +55,7 @@ function PieChart({ data, colors = DEFAULT_COLORS }) {
           verticalAlign="bottom"
           iconType="circle"
           iconSize={9}
-          wrapperStyle={{ fontSize: "13px" }}
+          wrapperStyle={{ fontSize: "12px", fontFamily: font.mono }}
         />
       </RechartsPieChart>
     </ResponsiveContainer>

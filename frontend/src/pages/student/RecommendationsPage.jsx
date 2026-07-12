@@ -10,6 +10,7 @@ import {
   markRecommendationRead,
 } from "../../services/recommendationService";
 import { useAuthContext } from "../../contexts/AuthContext";
+import { PageHeader } from "../../components/gridline";
 
 // Student portal — Recommendations page.
 //
@@ -108,12 +109,14 @@ export default function RecommendationsPage() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-        <Typography variant="h4">Recommendations</Typography>
-        {unreadCount > 0 && (
-          <Chip label={`${unreadCount} unread`} color="secondary" size="small" />
-        )}
-      </Box>
+      <PageHeader
+        title="Recommendations"
+        action={
+          unreadCount > 0 && (
+            <Chip label={`${unreadCount} unread`} color="secondary" size="small" />
+          )
+        }
+      />
 
       {recommendations.length === 0 ? (
         <Typography variant="body2" color="text.secondary">

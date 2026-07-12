@@ -10,6 +10,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import { generateReport, downloadBlob } from "../../services/reportService";
 import api from "../../services/api";
+import { PageHeader, Panel } from "../../components/gridline";
 
 // Admin portal — Reports: pick type + target, generate, download PDF.
 export default function ReportsPage() {
@@ -68,59 +69,59 @@ export default function ReportsPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Reports
-      </Typography>
+      <PageHeader title="Reports" />
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <ToggleButtonGroup
-        size="small" exclusive value={reportType}
-        onChange={(_, v) => { if (v) { setReportType(v); setError(null); } }}
-        sx={{ mb: 3 }}
-      >
-        <ToggleButton value="STUDENT">Student</ToggleButton>
-        <ToggleButton value="CLASS">Class</ToggleButton>
-        <ToggleButton value="SEMESTER">Semester</ToggleButton>
-      </ToggleButtonGroup>
+      <Panel>
+        <ToggleButtonGroup
+          size="small" exclusive value={reportType}
+          onChange={(_, v) => { if (v) { setReportType(v); setError(null); } }}
+          sx={{ mb: 3 }}
+        >
+          <ToggleButton value="STUDENT">Student</ToggleButton>
+          <ToggleButton value="CLASS">Class</ToggleButton>
+          <ToggleButton value="SEMESTER">Semester</ToggleButton>
+        </ToggleButtonGroup>
 
-      <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
-        {reportType === "STUDENT" && (
-          <TextField select size="small" sx={{ width: 340 }} label="Student"
-            value={studentId} onChange={(e) => setStudentId(e.target.value)}>
-            {students.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.first_name} {s.last_name} ({s.student_code})
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
+        <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
+          {reportType === "STUDENT" && (
+            <TextField select size="small" sx={{ width: 340 }} label="Student"
+              value={studentId} onChange={(e) => setStudentId(e.target.value)}>
+              {students.map((s) => (
+                <MenuItem key={s.id} value={s.id}>
+                  {s.first_name} {s.last_name} ({s.student_code})
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
 
-        {reportType === "CLASS" && (
-          <TextField select size="small" sx={{ width: 340 }} label="Class"
-            value={classId} onChange={(e) => setClassId(e.target.value)}>
-            {classes.map((c) => (
-              <MenuItem key={c.id} value={c.id}>
-                {c.class_name} ({c.class_code})
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
+          {reportType === "CLASS" && (
+            <TextField select size="small" sx={{ width: 340 }} label="Class"
+              value={classId} onChange={(e) => setClassId(e.target.value)}>
+              {classes.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.class_name} ({c.class_code})
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
 
-        {reportType === "SEMESTER" && (
-          <TextField size="small" sx={{ width: 340 }} label="Semester"
-            placeholder="Fall 2025-26" value={semester}
-            onChange={(e) => setSemester(e.target.value)} />
-        )}
+          {reportType === "SEMESTER" && (
+            <TextField size="small" sx={{ width: 340 }} label="Semester"
+              placeholder="Fall 2025-26" value={semester}
+              onChange={(e) => setSemester(e.target.value)} />
+          )}
 
-        <Button variant="contained" disabled={!ready || generating} onClick={handleGenerate}>
-          {generating ? <CircularProgress size={22} color="inherit" /> : "Generate PDF"}
-        </Button>
-      </Box>
+          <Button variant="contained" disabled={!ready || generating} onClick={handleGenerate}>
+            {generating ? <CircularProgress size={22} color="inherit" /> : "Generate PDF"}
+          </Button>
+        </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
-        The PDF downloads automatically when generation completes.
-      </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
+          The PDF downloads automatically when generation completes.
+        </Typography>
+      </Panel>
     </Box>
   );
 }

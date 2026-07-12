@@ -1,20 +1,25 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import RiskBadge from "./RiskBadge";
+import Panel from "../gridline/Panel";
+import { color, numSx } from "../../theme/tokens";
+import { formatDate, formatFailureProbability } from "../../utils/formatters";
 
 // Summary card for one prediction result.
+// Props contract unchanged: { prediction } matching PredictionResponse.
 //
-// Props:
-//   prediction - object matching your PredictionResponse / PredictionRecord
-//                shape exactly:
-//                { predicted_score, predicted_grade, failure_probability,
-//                  risk_level, pass_fail, predicted_at }
+// v2 (GRIDLINE): rebuilt from raw divs + inline styles to Panel +
+// Typography. The old version predated the theme entirely — inline
+// styles are invisible to MUI theming, which is why it stayed white in
+// dark mode and kept the retired Fraunces font.
 function PredictionCard({ prediction }) {
   if (!prediction) {
     return (
-      <div style={cardStyle}>
-        <p style={{ fontSize: "13px", color: "#6B7080" }}>
+      <Panel>
+        <Typography variant="body2" color="text.secondary">
           No prediction available yet. Run a prediction to see results here.
-        </p>
-      </div>
+        </Typography>
+      </Panel>
     );
   }
 
@@ -30,70 +35,49 @@ function PredictionCard({ prediction }) {
   const isPass = pass_fail === "PASS" || pass_fail === 1;
 
   return (
-    <div style={cardStyle}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <p style={{ fontSize: "13px", color: "#6B7080", marginBottom: "6px" }}>
+    <Panel>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
             Predicted score
-          </p>
-          <p
-            style={{
-              fontFamily: "'Fraunces', serif",
-              fontSize: "32px",
-              fontWeight: 600,
-              lineHeight: 1,
-            }}
-          >
+          </Typography>
+          <Typography sx={{ ...numSx, fontSize: 32, fontWeight: 600, lineHeight: 1 }}>
             {predicted_score.toFixed(1)}
-          </p>
-        </div>
+          </Typography>
+        </Box>
         <RiskBadge level={risk_level} />
-      </div>
+      </Box>
 
-      <div style={{ display: "flex", gap: "24px", marginTop: "18px" }}>
-        <div>
-          <p style={{ fontSize: "12px", color: "#6B7080" }}>Predicted grade</p>
-          <p style={{ fontSize: "18px", fontWeight: 600, marginTop: "2px" }}>{predicted_grade}</p>
-        </div>
-        <div>
-          <p style={{ fontSize: "12px", color: "#6B7080" }}>Failure probability</p>
-          <p style={{ fontSize: "18px", fontWeight: 600, marginTop: "2px" }}>
-            {(failure_probability * 100).toFixed(0)}%
-          </p>
-        </div>
-        <div>
-          <p style={{ fontSize: "12px", color: "#6B7080" }}>Outcome</p>
-          <p
-            style={{
-              fontSize: "18px",
-              fontWeight: 600,
-              marginTop: "2px",
-              color: isPass ? "#1F9D63" : "#D14343",
-            }}
-          >
-            {isPass ? "Pass" : "Fail"}
-          </p>
-        </div>
-      </div>
+      <Box sx={{ display: "flex", gap: 3, mt: 2.25 }}>
+        <Stat label="Predicted grade" value={predicted_grade} />
+        <Stat label="Failure probability" value={formatFailureProbability(failure_probability)} />
+        <Stat
+          label="Outcome"
+          value={isPass ? "Pass" : "Fail"}
+          valueColor={isPass ? color.success : color.danger}
+        />
+      </Box>
 
       {predicted_at && (
-        <p style={{ fontSize: "11px", color: "#6B7080", marginTop: "16px" }}>
-          Predicted on {new Date(predicted_at).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}
-        </p>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
+          Predicted on {formatDate(predicted_at)}
+        </Typography>
       )}
-    </div>
+    </Panel>
   );
 }
 
-const cardStyle = {
-  background: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  padding: "20px",
-};
+function Stat({ label, value, valueColor }) {
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography sx={{ ...numSx, fontSize: 18, fontWeight: 600, mt: 0.25, color: valueColor || "text.primary" }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
 
 export default PredictionCard;

@@ -13,6 +13,10 @@ import { getStudentAnalytics } from "../../services/analyticsService";
 import { useLatestPrediction } from "../../hooks/usePredictions";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { formatGPA, formatFailureProbability } from "../../utils/formatters";
+import { Panel, SectionHeading, PageHeader, ScaleMark, GPA_ZONES } from "../../components/gridline";
+import { numSx, color } from "../../theme/tokens";
+
+
 
 // Student portal — My Performance page.
 //
@@ -90,33 +94,30 @@ export default function MyPerformancePage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        My Performance
-      </Typography>
+      <PageHeader title="My Performance" />
 
-      {/* ── KPI row ──
-          Simple inline cards for now. StatCard.jsx is Roshan's Layer B —
-          swap these for <StatCard /> once it exists (same TODO pattern
-          as the layouts' temporary sidebars). */}
+      {/* ── KPI row ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12} sm={4}>
-          <Box sx={kpiCardSx}>
-            <Typography variant="body2" color="text.secondary">
+          <Panel>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Current GPA
             </Typography>
-            <Typography variant="h4">{formatGPA(current_gpa)}</Typography>
-          </Box>
+            <Typography variant="h4" sx={numSx}>{formatGPA(current_gpa)}</Typography>
+            <ScaleMark value={current_gpa} min={0} max={4} zones={GPA_ZONES} />
+          </Panel>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Box sx={kpiCardSx}>
-            <Typography variant="body2" color="text.secondary">
+          <Panel>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               CGPA
             </Typography>
-            <Typography variant="h4">{formatGPA(cgpa)}</Typography>
-          </Box>
+            <Typography variant="h4" sx={numSx}>{formatGPA(cgpa)}</Typography>
+            <ScaleMark value={cgpa} min={0} max={4} zones={GPA_ZONES} />
+          </Panel>
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Box sx={kpiCardSx}>
+          <Panel>
             <Typography variant="body2" color="text.secondary">
               Risk Level
             </Typography>
@@ -127,17 +128,15 @@ export default function MyPerformancePage() {
                 failure probability
               </Typography>
             </Box>
-          </Box>
+          </Panel>
         </Grid>
       </Grid>
 
       {/* ── Charts + prediction ── */}
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
-          <Box sx={chartCardSx}>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              GPA Trend
-            </Typography>
+          <Panel>
+            <SectionHeading>GPA Trend</SectionHeading>
             {/* yDomain locked to [0,4]: without it, Recharts auto-scales
                 and a flat 3.1→3.2 line looks like a dramatic climb */}
             <LineChart
@@ -146,27 +145,23 @@ export default function MyPerformancePage() {
               yKey="gpa"
               yDomain={[0, 4]}
             />
-          </Box>
+          </Panel>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box sx={chartCardSx}>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              You vs Class Average
-            </Typography>
+          <Panel>
+            <SectionHeading>You vs Class Average</SectionHeading>
             {/* subject_performance ({subject, score, class_avg, ...})
                 now arrives with subject CODES from the backend and
                 matches RadarChart's expected props exactly — no
                 transform needed anymore */}
             <RadarChart data={subject_performance} />
-          </Box>
+          </Panel>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box sx={chartCardSx}>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              Subject Scores
-            </Typography>
+          <Panel>
+            <SectionHeading>Subject Scores</SectionHeading>
             {/* colorRules: below 40 = failing crimson, below 60 = amber —
                 thresholds follow the 9-tier scale where <40 is D+/D/E
                 territory and 40–59 is C/C+ */}
@@ -176,42 +171,24 @@ export default function MyPerformancePage() {
               yKey="score"
               yDomain={[0, 100]}
               colorRules={[
-                { threshold: 40, color: "#D14343" },
-                { threshold: 60, color: "#D89614" },
+                { threshold: 40, color: color.danger },
+                { threshold: 60, color: color.warning },
               ]}
             />
-          </Box>
+          </Panel>
         </Grid>
 
         <Grid item xs={12} md={6}>
-          <Box>
-            <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-              Latest Prediction
-            </Typography>
-            {predictionLoading ? (
-              <CircularProgress size={24} />
-            ) : (
-              // prediction === null (the hook's 404 case) renders
-              // PredictionCard's built-in "no prediction yet" empty state
-              <PredictionCard prediction={prediction} />
-            )}
-          </Box>
-        </Grid>
+              <SectionHeading>Latest Prediction</SectionHeading>
+              {predictionLoading ? (
+                <CircularProgress size={24} />
+              ) : (
+                // PredictionCard brings its own Panel — no outer wrapper,
+                // or you get a double border (panel-in-panel).
+                <PredictionCard prediction={prediction} />
+              )}
+            </Grid>
       </Grid>
     </Box>
   );
 }
-
-const kpiCardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};
-
-const chartCardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};
