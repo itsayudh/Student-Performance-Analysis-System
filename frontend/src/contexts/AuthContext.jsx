@@ -1,7 +1,12 @@
 // src/contexts/AuthContext.jsx
-import { createContext, useState, useContext, useCallback } from "react";
-import { useEffect } from "react"; // add to existing import line
-
+import {
+  createContext,
+  useState,
+  useContext,
+  useCallback,
+  useEffect,
+} from "react";
+import * as authService from "../services/authService";
 
 const AuthContext = createContext(null);
 
@@ -11,11 +16,26 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // { id, email, role, full_name }
   const [isLoading, setIsLoading] = useState(true); // true until refresh check completes
 
+  // SILENT REFRESH ON BOOT:
+  // On a hard reload the in-memory token is gone, but the httpOnly
+  // refresh cookie (set by the backend at login) survives in the browser.
+  // So we ask the backend "is this cookie still good?" — if yes, we get
+  // a fresh access token + user back and the session continues seamlessly.
+  // If no (no cookie / expired / revoked), the catch runs and the user
+  // simply stays logged out. Either way, isLoading flips to false LAST,
+  // which is what releases ProtectedRoute from its spinner.
   useEffect(() => {
-    // TODO: replace this with a real silent refresh call once authService.js exists:
-    // authService.refresh().then(token => setAccessToken(token)).finally(() => setIsLoading(false))
-    // For now, no session persistence — just stop blocking on load.
-    setIsLoading(false);
+    authService
+      .refreshToken()
+      .then((data) => {
+        setAccessToken(data.access_token);
+        setUser(data.user ?? null);
+      })
+      .catch(() => {
+        // No valid session — perfectly normal on first visit.
+        // authService already cleared the api.js token for us.
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback((token, userData) => {
@@ -26,8 +46,6 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     setAccessToken(null);
     setUser(null);
-    // TODO: friend/teammate wires actual POST /auth/logout call via authService
-    // TODO: api.js interceptor should also clear on 401 loop
   }, []);
 
   const value = {
@@ -39,7 +57,7 @@ export function AuthProvider({ children }) {
     setIsLoading,
     login,
     logout,
-    setAccessToken, // exposed so the refresh-token flow in api.js can silently update it
+    setAccessToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -55,14 +55,25 @@ export default function TeacherForm({
 
   const isEdit = mode === "edit";
 
-  const rules = {
-    first_name: [required("First name"), isSafeName],
-    last_name: [required("Last name"), isSafeName],
-    email: [required("Email"), isEmail],
-    employee_code: [required("Employee code"), isEmployeeCode],
-    department: [required("Department")],
-    joining_date: [required("Joining date")],
-  };
+  // Only validate fields the user can actually edit in this mode.
+  // In edit mode, email/employee_code are disabled AND absent from the
+  // TeacherUpdate schema — validating them would trap the user with a
+  // required error on a field they can't type into. joining_date is
+  // also not in TeacherUpdate, so it's create-only too.
+  const rules = isEdit
+    ? {
+        first_name: [required("First name"), isSafeName],
+        last_name: [required("Last name"), isSafeName],
+        department: [required("Department")],
+      }
+    : {
+        first_name: [required("First name"), isSafeName],
+        last_name: [required("Last name"), isSafeName],
+        email: [required("Email"), isEmail],
+        employee_code: [required("Employee code"), isEmployeeCode],
+        department: [required("Department")],
+        joining_date: [required("Joining date")],
+      };
 
   const handleChange = (field) => (e) => {
     setValues((prev) => ({ ...prev, [field]: e.target.value }));

@@ -60,15 +60,24 @@ export default function StudentForm({
   // Mirrors StudentCreate: required = first/last name, email,
   // student_code, program, department, admission_date.
   // Optional = gender, date_of_birth, phone, address.
-  const rules = {
-    first_name: [required("First name"), isSafeName],
-    last_name: [required("Last name"), isSafeName],
-    email: [required("Email"), isEmail],
-    student_code: [required("Student code"), isStudentCode],
-    program: [required("Program")],
-    department: [required("Department")],
-    admission_date: [required("Admission date")],
-  };
+  // Mode-aware rules: email/student_code/admission_date are create-only
+  // (locked in edit mode + absent from the StudentUpdate schema).
+  const rules = isEdit
+    ? {
+        first_name: [required("First name"), isSafeName],
+        last_name: [required("Last name"), isSafeName],
+        program: [required("Program")],
+        department: [required("Department")],
+      }
+    : {
+        first_name: [required("First name"), isSafeName],
+        last_name: [required("Last name"), isSafeName],
+        email: [required("Email"), isEmail],
+        student_code: [required("Student code"), isStudentCode],
+        program: [required("Program")],
+        department: [required("Department")],
+        admission_date: [required("Admission date")],
+      };
 
   const handleChange = (field) => (e) => {
     setValues((prev) => ({ ...prev, [field]: e.target.value }));

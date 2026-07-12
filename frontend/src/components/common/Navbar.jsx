@@ -17,6 +17,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { useThemeToggle } from "../../contexts/ThemeContext";
+import useAuth from "../../hooks/useAuth";
 
 /**
  * Shared top bar for all three portals.
@@ -28,7 +29,8 @@ import { useThemeToggle } from "../../contexts/ThemeContext";
  * because it's identical across portals — only the title differs.
  */
 export default function Navbar({ title }) {
-  const { user, logout } = useAuthContext();
+  const { user } = useAuthContext();
+  const { logoutUser } = useAuth();
   const { mode, toggleTheme } = useThemeToggle();
   const navigate = useNavigate();
 
@@ -36,11 +38,12 @@ export default function Navbar({ title }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
 
-  const handleLogout = () => {
-    setAnchorEl(null);
-    logout();
-    navigate("/login");
-  };
+
+
+const handleLogout = () => {
+  setAnchorEl(null);
+  logoutUser(); // POST /auth/logout + clear state + navigate — all in the hook
+};
 
   // First letter of email for the avatar circle, e.g. "a" for admin@...
   const avatarLetter = (user?.full_name || user?.email || "?")
