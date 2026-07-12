@@ -2,6 +2,8 @@ import uuid
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
+from app.models.student import Student
+from app.models.teacher import Teacher
 
 from app.models.user import User, TokenBlacklist
 from app.utils.security import (
@@ -52,7 +54,7 @@ def login_user(email: str, password: str, db: Session) -> dict:
         "refresh_token": refresh_token,
         "token_type":    "bearer",
         "expires_in":    900,
-        "user":          user_payload
+        "user": _build_user_payload(user, db),
     }
 
 
@@ -85,7 +87,8 @@ def refresh_access_token(refresh_token: str, db: Session) -> dict:
     return {
         "access_token": access_token,
         "token_type":   "bearer",
-        "expires_in":   900
+        "expires_in":   900,
+        "user": _build_user_payload(user, db),
     }
 
 
@@ -122,3 +125,28 @@ def change_password(user_id: str, current_password: str, new_password: str, db: 
     user.password_hash = hash_password(new_password)
     db.commit()
     return {"message": "Password changed successfully"}
+
+def _build_user_payload(user: User, db: Session) -> dict:
+    """
+    The ONE place the login/refresh 'user' object is constructed.
+    login_user and refresh_access_token must both call this, so the
+    two responses can never drift apart again. If a field is ever
+    added (e.g. full_name), add it HERE and both flows get it.
+    """
+    payload = {
+        "id":    str(user.id),
+        "email": user.email,
+        "role":  user.role,
+    }
+    # Role-specific profile ids — the users.id vs students.id seam:
+    # student-portal pages call /analytics/student/{student_id} with
+    # the STUDENT table's id, not the user's id.
+    if user.role == "STUDENT":
+        student = db.query(Student).filter(Student.user_id == user.id).first()
+        if student:
+            payload["student_id"] = str(student.id)
+    elif user.role == "TEACHER":
+        teacher = db.query(Teacher).filter(Teacher.user_id == user.id).first()
+        if teacher:
+            payload["teacher_id"] = str(teacher.id)
+    return payload

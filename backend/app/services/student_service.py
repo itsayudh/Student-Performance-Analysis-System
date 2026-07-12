@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from app.models.student import Student
 from app.models.user import User
 from app.utils.security import hash_password
-
+import secrets
 
 def get_students(
     db: Session,
@@ -65,8 +65,7 @@ def create_student(db: Session, data: dict):
             detail="Student with this code or email already exists"
         )
 
-    temp_password = str(uuid.uuid4())[:10]
-
+    temp_password = secrets.token_urlsafe(8)  # e.g. "xK3nPq9vTw" — no hyphens, cryptographically random
     user = User(
         id            = uuid.uuid4(),
         email         = data["email"],

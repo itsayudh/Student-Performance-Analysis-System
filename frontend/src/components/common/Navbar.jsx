@@ -31,8 +31,8 @@ import useAuth from "../../hooks/useAuth";
  */
 export default function Navbar({ title, accent = color.ultramarine }) {
   const { user, logout } = useAuthContext();
-export default function Navbar({ title }) {
-  const { user } = useAuthContext();
+//export default function Navbar({ title }) {
+  //const { user } = useAuthContext();
   const { logoutUser } = useAuth();
   const { mode, toggleTheme } = useThemeToggle();
   const navigate = useNavigate();
@@ -117,3 +117,4 @@ const handleLogout = () => {
     </AppBar>
   );
 }
+
