@@ -1,15 +1,26 @@
 // src/routes/AppRoutes.jsx
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 import AuthLayout from "../layouts/AuthLayout";
 import AdminLayout from "../layouts/AdminLayout";
 import TeacherLayout from "../layouts/TeacherLayout";
 import StudentLayout from "../layouts/StudentLayout";
-import { useAuthContext } from "../contexts/AuthContext";
+import LoginPage from "../pages/auth/LoginPage";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
+import StudentsPage from "../pages/admin/StudentsPage";
+import AddStudentPage from "../pages/admin/AddStudentPage";
+import StudentDetailPage from "../pages/admin/StudentDetailPage";
+import TeachersPage from "../pages/admin/TeachersPage";
+import TeacherDetailPage from "../pages/admin/TeacherDetailPage";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 
 
-//add by ayudh
+
+
+
+// added by ayudh
 import AnalyticsPage from "../pages/admin/AnalyticsPage";
 import PredictionsPage from "../pages/admin/PredictionsPage";
 import StudentPerformancePage from "../pages/teacher/StudentPerformancePage";
@@ -28,83 +39,18 @@ import StudentDashboard from "../pages/student/StudentDashboard";
 import { login as apiLogin } from "../services/authService";
 
 // TODO: replace each placeholder below with the real page import once built
-// e.g. import LoginPage from "../pages/auth/LoginPage";
 function Placeholder({ label }) {
   return <h2>{label} — page not built yet</h2>;
 }
-
-// // TEMPORARY — only for testing, remove before Layer E (real LoginPage.jsx)
-// function FakeLoginTestOnly() {
-//   const { login } = useAuthContext();
-//   const navigate = useNavigate();
-
-//   const loginAs = (role) => {
-//     login("fake-token", { role, email: `${role.toLowerCase()}@test.com` });
-//     navigate(`/${role.toLowerCase()}/dashboard`);
-//   };
-
-//   return (
-//     <div style={{ padding: 20 }}>
-//       <button onClick={() => loginAs("ADMIN")}>Login as Admin</button>{" "}
-//       <button onClick={() => loginAs("TEACHER")}>Login as Teacher</button>{" "}
-//       <button onClick={() => loginAs("STUDENT")}>Login as Student</button>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-////////////// Real token to the send to the backend/////////////////////
-// TEMPORARY — real-backend login for testing; Roshan's LoginPage.jsx
-// replaces this later.
-function FakeLoginTestOnly() {
-  const { login } = useAuthContext();
-  const navigate = useNavigate();
-  
-
- const loginAs = async (email, password) => {
-    try {
-      // authService.login does BOTH jobs: calls the backend AND
-      // registers the token with api.js so axios attaches it everywhere
-      const data = await apiLogin(email, password);
-      login(data.access_token, data.user); // fills AuthContext (guards/UI)
-      navigate(`/${data.user.role.toLowerCase()}/dashboard`);
-    } catch (err) {
-      alert(`Login failed (${err.response?.status ?? "network"})`);
-    }
-  };
-  return (
-    <div style={{ padding: 20 }}>
-      <button onClick={() => loginAs("admin@spas.com", "Admin1234")}>Admin</button>{" "}
-      <button onClick={() => loginAs("teacher@spas.com", "Teacher1234")}>Teacher</button>{" "}
-      <button onClick={() => loginAs("student@spas.com", "Student1234")}>Student</button>
-    </div>
-  );
-}
-  
-
-
-
-
-
 
 export default function AppRoutes() {
   return (
     <Routes>
       {/* ---------- Public routes (wrapped in AuthLayout) ---------- */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<FakeLoginTestOnly />} />
-        <Route
-          path="/forgot-password"
-          element={<Placeholder label="Forgot Password" />}
-        />
-        <Route
-          path="/reset-password"
-          element={<Placeholder label="Reset Password" />}
-        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       {/* ---------- Authenticated routes ---------- */}
@@ -112,42 +58,18 @@ export default function AppRoutes() {
         {/* Admin portal */}
         <Route element={<RoleRoute allowedRoles={["ADMIN"]} />}>
           <Route element={<AdminLayout />}>
-            <Route
-              path="/admin/dashboard"
-              element={<Placeholder label="Admin Dashboard" />}
-            />
-            <Route
-              path="/admin/students"
-              element={<Placeholder label="Students" />}
-            />
-            <Route
-              path="/admin/students/add"
-              element={<Placeholder label="Add Student" />}
-            />
-            <Route
-              path="/admin/students/:id"
-              element={<Placeholder label="Student Detail" />}
-            />
-            <Route
-              path="/admin/teachers"
-              element={<Placeholder label="Teachers" />}
-            />
-            <Route
-              path="/admin/teachers/:id"
-              element={<Placeholder label="Teacher Detail" />}
-            />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/students" element={<StudentsPage />} />;
+            <Route path="/admin/students/add" element={<AddStudentPage />} />
+            <Route path="/admin/students/:id" element={<StudentDetailPage />} />
+            <Route path="/admin/teachers" element={<TeachersPage />} />
+            <Route path="/admin/teachers/:id" element={<TeacherDetailPage />} />
             <Route
               path="/admin/classes"
               element={<ClassesPage />}  
             />
-            <Route
-              path="/admin/analytics"
-              element={<AnalyticsPage/>}   //change here
-            />
-            <Route
-              path="/admin/predictions"
-              element={<PredictionsPage/>}  //change here
-            />
+            <Route path="/admin/analytics" element={<AnalyticsPage />} />
+            <Route path="/admin/predictions" element={<PredictionsPage />} />
             <Route
               path="/admin/reports"
               element={<ReportsPage />}  //change here
@@ -176,11 +98,11 @@ export default function AppRoutes() {
             />
             <Route
               path="/teacher/performance"
-              element={<StudentPerformancePage/>}  //change here
+              element={<StudentPerformancePage />}
             />
             <Route
               path="/teacher/early-warning"
-              element={<EarlyWarningPage/>}  //change here
+              element={<EarlyWarningPage />}
             />
           </Route>
         </Route>
@@ -202,11 +124,11 @@ export default function AppRoutes() {
             />
             <Route
               path="/student/performance"
-              element={<MyPerformancePage/>}  //change here
+              element={<MyPerformancePage />}
             />
             <Route
               path="/student/recommendations"
-              element={<RecommendationsPage />}  //change here
+              element={<RecommendationsPage />}
             />
           </Route>
         </Route>
