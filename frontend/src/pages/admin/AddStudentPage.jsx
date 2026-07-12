@@ -1,0 +1,71 @@
+// src/pages/admin/AddStudentPage.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Paper from "@mui/material/Paper";
+import Box from "@mui/material/Box";
+import PageHeader from "../../components/common/PageHeader";
+import AlertBanner from "../../components/common/AlertBanner";
+import StudentForm from "../../components/forms/StudentForm";
+import { createStudent } from "../../services/studentService";
+import { parseApiError } from "../../utils/apiError";
+
+export default function AddStudentPage() {
+  const navigate = useNavigate();
+  const [alert, setAlert] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (payload) => {
+    // payload arrives pre-validated and pre-shaped by StudentForm:
+    // matches StudentCreate exactly, ""→null already applied.
+    setSaving(true);
+    setAlert(null);
+    try {
+      await createStudent(payload);
+      // Navigate back to the list, carrying a success message with us —
+      // showing it HERE would be pointless, we're about to leave.
+      navigate("/admin/students", {
+        replace: true,
+        state: {
+          flash: `${payload.first_name} ${payload.last_name} was added successfully.`,
+        },
+      });
+    } catch (err) {
+      setAlert({ severity: "error", ...parseApiError(err) });
+      window.scrollTo({ top: 0, behavior: "smooth" }); // error banner is up top
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Add Student"
+        subtitle="Create a new student record"
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin/dashboard" },
+          { label: "Students", to: "/admin/students" },
+          { label: "Add Student" },
+        ]}
+      />
+
+      <AlertBanner
+        severity={alert?.severity}
+        title={alert?.title}
+        message={alert?.messages}
+        show={!!alert}
+        onClose={() => setAlert(null)}
+      />
+
+      <Paper sx={{ p: 3, maxWidth: 900 }}>
+        <StudentForm
+          mode="create"
+          loading={saving}
+          onSubmit={handleSubmit}
+          onCancel={() => navigate("/admin/students")}
+        />
+      </Paper>
+      <Box sx={{ height: 24 }} />
+    </>
+  );
+}

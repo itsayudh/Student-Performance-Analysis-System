@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { useThemeToggle } from "../../contexts/ThemeContext";
 import { color, font } from "../../theme/tokens";
+import useAuth from "../../hooks/useAuth";
 
 /**
  * Shared top bar for all three portals.
@@ -30,6 +31,9 @@ import { color, font } from "../../theme/tokens";
  */
 export default function Navbar({ title, accent = color.ultramarine }) {
   const { user, logout } = useAuthContext();
+export default function Navbar({ title }) {
+  const { user } = useAuthContext();
+  const { logoutUser } = useAuth();
   const { mode, toggleTheme } = useThemeToggle();
   const navigate = useNavigate();
 
@@ -37,11 +41,12 @@ export default function Navbar({ title, accent = color.ultramarine }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
 
-  const handleLogout = () => {
-    setAnchorEl(null);
-    logout();
-    navigate("/login");
-  };
+
+
+const handleLogout = () => {
+  setAnchorEl(null);
+  logoutUser(); // POST /auth/logout + clear state + navigate — all in the hook
+};
 
   // First letter of email for the avatar circle, e.g. "a" for admin@...
   const avatarLetter = (user?.full_name || user?.email || "?")
