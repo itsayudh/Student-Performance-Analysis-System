@@ -8,6 +8,7 @@ from app.services.teacher_service import (
     update_teacher, delete_teacher
 )
 from app.schemas.teacher import TeacherCreate, TeacherUpdate
+from app.services.class_service import get_teacher_classes
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -67,3 +68,11 @@ def remove_teacher(
     current_user = Depends(require_role("ADMIN"))
 ):
     return delete_teacher(db, teacher_id)
+
+@router.get("/{teacher_id}/classes")
+def teacher_classes(
+    teacher_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN", "TEACHER"))
+):
+    return get_teacher_classes(db, teacher_id)
