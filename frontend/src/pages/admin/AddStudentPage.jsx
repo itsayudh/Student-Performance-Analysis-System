@@ -20,14 +20,24 @@ export default function AddStudentPage() {
     setSaving(true);
     setAlert(null);
     try {
-      await createStudent(payload);
-      // Navigate back to the list, carrying a success message with us —
+      // CHANGED: capture the response — in dev mode the backend returns
+      // the auto-generated temporary password for the new student's
+      // login account (production design emails it instead; see docs §7).
+      const result = await createStudent(payload);
+
+      // const flash = result?.temp_password
+      //   ? `${payload.first_name} ${payload.last_name} was added. Temporary password: ${result.temp_password} — share it with the student; they should change it after first login.`
+      //   : `${payload.first_name} ${payload.last_name} was added successfully.`;
+
+      const flash = result?.temp_password
+        ? `${payload.first_name} ${payload.last_name} was added. Temporary password (copy exactly, without quotes): "${result.temp_password}"`
+        : `${payload.first_name} ${payload.last_name} was added successfully.`;
+
+      // Navigate back to the list, carrying the message with us —
       // showing it HERE would be pointless, we're about to leave.
       navigate("/admin/students", {
         replace: true,
-        state: {
-          flash: `${payload.first_name} ${payload.last_name} was added successfully.`,
-        },
+        state: { flash },
       });
     } catch (err) {
       setAlert({ severity: "error", ...parseApiError(err) });
