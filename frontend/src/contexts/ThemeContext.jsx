@@ -6,8 +6,9 @@ import {
   useMemo,
   useCallback,
 } from "react";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import buildTheme from "../theme/theme";
 
 const ThemeToggleContext = createContext(null);
 
@@ -18,18 +19,10 @@ export function AppThemeProvider({ children }) {
     setMode((prev) => (prev === "light" ? "dark" : "light"));
   }, []);
 
-  // Recompute the MUI theme only when mode changes
-  const theme = useMemo(
-    () =>
-      createTheme({
-        palette: {
-          mode,
-          primary: { main: "#1565C0" },
-          secondary: { main: "#2E7D32" },
-        },
-      }),
-    [mode],
-  );
+  // GRIDLINE theme built from src/theme/theme.js — the inline
+  // createTheme that used to live here is retired; all visual
+  // decisions now come from the token layer.
+  const theme = useMemo(() => buildTheme(mode), [mode]);
 
   const value = { mode, toggleTheme };
 

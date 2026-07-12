@@ -17,6 +17,8 @@ import PredictionCard from "../../components/predictions/PredictionCard";
 import { useRunPrediction, usePredictionHistory } from "../../hooks/usePredictions";
 import api from "../../services/api";
 import { formatDate, formatFailureProbability } from "../../utils/formatters";
+import { Panel, PageHeader, SectionHeading } from "../../components/gridline";
+import { numSx } from "../../theme/tokens";
 
 // Admin portal — Predictions page. The only WRITE-path page in Ayudh's
 // Layer E.
@@ -45,7 +47,8 @@ const FEATURE_FIELDS = [
   { name: "midterm_score",            label: "Midterm score",           min: 0, max: 100 },
   { name: "historical_gpa",           label: "Historical GPA",          min: 0, max: 4,   step: 0.01 },
   { name: "study_hours_per_week",     label: "Study hours / week",      min: 0, max: 80 },
-  { name: "subject_difficulty_score", label: "Subject difficulty (0-1)", min: 0, max: 1, step: 0.01 },];
+  { name: "subject_difficulty_score", label: "Subject difficulty (0-1)", min: 0, max: 1, step: 0.01 },
+];
 
 const EMPTY_FORM = Object.fromEntries(FEATURE_FIELDS.map((f) => [f.name, ""]));
 
@@ -133,17 +136,15 @@ export default function PredictionsPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Predictions
-      </Typography>
+      <PageHeader title="Predictions" />
 
       <Grid container spacing={3}>
         {/* ── Left column: the run-prediction form ── */}
         <Grid item xs={12} md={5}>
-          <Box sx={cardSx}>
-            <Typography variant="subtitle1" sx={{ mb: 2 }}>
+          <Panel>
+            <SectionHeading sx={{ mb: 2 }}>
               Run a new prediction
-            </Typography>
+            </SectionHeading>
 
             <Autocomplete
               sx={{ mb: 2 }}
@@ -201,26 +202,26 @@ export default function PredictionsPage() {
                 "Run Prediction"
               )}
             </Button>
-          </Box>
+          </Panel>
         </Grid>
 
         {/* ── Right column: latest result + history ── */}
         <Grid item xs={12} md={7}>
           {/* result stays null until the first successful submit —
               PredictionCard's empty state covers that gracefully */}
-          <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+          <SectionHeading sx={{ mb: 1.5 }}>
             Result
-          </Typography>
+          </SectionHeading>
           <PredictionCard prediction={result} />
 
-          <Typography variant="subtitle1" sx={{ mt: 3, mb: 1.5 }}>
+          <SectionHeading sx={{ mt: 3, mb: 1.5 }}>
             Prediction history{" "}
             {selectedStudent && total > 0 && (
               <Typography component="span" variant="body2" color="text.secondary">
                 ({total} total)
               </Typography>
             )}
-          </Typography>
+          </SectionHeading>
 
           {!selectedStudent ? (
             <Typography variant="body2" color="text.secondary">
@@ -233,7 +234,7 @@ export default function PredictionsPage() {
               No predictions yet for this student.
             </Typography>
           ) : (
-            <Box sx={cardSx}>
+            <Panel>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -249,9 +250,9 @@ export default function PredictionsPage() {
                   {predictions.map((p) => (
                     <TableRow key={p.prediction_id}>
                       <TableCell>{formatDate(p.predicted_at)}</TableCell>
-                      <TableCell>{p.predicted_score.toFixed(1)}</TableCell>
+                      <TableCell sx={numSx}>{p.predicted_score.toFixed(1)}</TableCell>
                       <TableCell>{p.predicted_grade}</TableCell>
-                      <TableCell>
+                      <TableCell sx={numSx}>
                         {formatFailureProbability(p.failure_probability)}
                       </TableCell>
                       <TableCell>
@@ -269,17 +270,10 @@ export default function PredictionsPage() {
                   ))}
                 </TableBody>
               </Table>
-            </Box>
+            </Panel>
           )}
         </Grid>
       </Grid>
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};

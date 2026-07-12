@@ -1,102 +1,101 @@
 import { createTheme } from "@mui/material/styles";
+import { color, font } from "./tokens";
 
-// SPAS Design System
-// Source: Aayudh Pantha's design spec — institutional, data-dense, trustworthy.
-// Palette meaning:
-//   navy    -> primary / sidebar
-//   slate   -> page background
-//   white   -> cards
-//   emerald -> good / pass (signal color)
-//   amber   -> medium risk (signal color)
-//   crimson -> high risk / critical (signal color)
-//   indigo  -> interactive accent (buttons, links, focus states)
+// GRIDLINE — SPAS design system v2.
+// (Replaces the earlier navy/Fraunces spec that previously lived in this
+// file; that theme was never imported anywhere and is fully retired.)
+//
+// Exported as buildTheme(mode) so ThemeContext's existing light/dark
+// toggle keeps working. "dark" is the provisional Blackboard variant —
+// same tokens, inverted surfaces — a placeholder until it gets its own
+// design pass.
 
-const colors = {
-  navy: "#1B2A4A",
-  slate: "#F6F7F9",
-  white: "#FFFFFF",
-  emerald: "#1F9D63",
-  amber: "#D89614",
-  crimson: "#D14343",
-  indigo: "#4C5FD5",
+const dark = {
+  paper:    "#10161D",
+  panel:    "#171F28",
+  gridline: "#26313C",
+  ink:      "#E5EAEF",
+  ink60:    "#93A1AE",
+  ink30:    "#5B6B7A",
 };
 
-export const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: colors.navy,
-      contrastText: colors.white,
-    },
-    secondary: {
-      main: colors.indigo,
-      contrastText: colors.white,
-    },
-    background: {
-      default: colors.slate,
-      paper: colors.white,
-    },
-    success: {
-      main: colors.emerald, // risk: LOW / pass
-    },
-    warning: {
-      main: colors.amber, // risk: MEDIUM
-    },
-    error: {
-      main: colors.crimson, // risk: HIGH / CRITICAL
-    },
-    text: {
-      primary: "#1B2A4A",
-      //secondary: "#5A6478",
-    },
-  },
+export default function buildTheme(mode = "light") {
+  const isDark = mode === "dark";
+  const c = isDark
+    ? { ...color, paper: dark.paper, panel: dark.panel, gridline: dark.gridline,
+        ink: dark.ink, ink60: dark.ink60, ink30: dark.ink30 }
+    : color;
 
-  typography: {
-    fontFamily: '"Inter", sans-serif',
-    // Fraunces reserved for headlines and KPI numbers only, per spec —
-    // everything else (body, tables, forms, labels) stays Inter.
-    h1: { fontFamily: '"Fraunces", serif', fontWeight: 600 },
-    h2: { fontFamily: '"Fraunces", serif', fontWeight: 600 },
-    h3: { fontFamily: '"Fraunces", serif', fontWeight: 600 },
-    h4: { fontFamily: '"Fraunces", serif', fontWeight: 600 },
-    // h5/h6 stay Inter — used for card titles/section headers, not KPI numbers
-    button: {
-      textTransform: "none", // institutional tone, not shouty all-caps buttons
-      fontWeight: 600,
+  return createTheme({
+    palette: {
+      mode,
+      primary:    { main: c.ultramarine, dark: c.ultramarineDark },
+      success:    { main: c.success },
+      warning:    { main: c.warning },
+      error:      { main: c.danger },
+      text:       { primary: c.ink, secondary: c.ink60, disabled: c.ink30 },
+      divider:    c.gridline,
+      background: { default: c.paper, paper: c.panel },
     },
-  },
 
-  shape: {
-    borderRadius: 8,
-  },
+    shape: { borderRadius: 10 },
 
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          boxShadow: "0 1px 3px rgba(27, 42, 74, 0.08)",
-          border: "1px solid rgba(27, 42, 74, 0.06)",
+    typography: {
+      fontFamily: font.body,
+      h4: { fontFamily: font.display, fontWeight: 700, fontSize: "1.55rem", letterSpacing: "-0.01em" },
+      h5: { fontFamily: font.display, fontWeight: 600, fontSize: "1.25rem", letterSpacing: "-0.01em" },
+      subtitle1: { fontFamily: font.display, fontWeight: 600, fontSize: "0.95rem" },
+      button: { textTransform: "none", fontWeight: 600 },
+    },
+
+    components: {
+      // The quadrille: faint measurement grid on the app background.
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: c.paper,
+            backgroundImage: `
+              repeating-linear-gradient(0deg,  transparent, transparent 23px, ${c.gridline}55 23px, ${c.gridline}55 24px),
+              repeating-linear-gradient(90deg, transparent, transparent 23px, ${c.gridline}55 23px, ${c.gridline}55 24px)
+            `,
+          },
         },
       },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 6,
+
+      // Flat paper panels — ruled border, never shadows.
+      MuiPaper: {
+        defaultProps: { elevation: 0 },
+        styleOverrides: {
+          root: { border: `1px solid ${c.gridline}`, backgroundImage: "none" },
         },
       },
+
+      MuiButton: {
+        defaultProps: { disableElevation: true },
+        styleOverrides: { root: { borderRadius: 8 } },
+      },
+
+      // Flags, not blobs.
+      MuiChip: {
+        styleOverrides: {
+          label: {
+            fontFamily: font.mono,
+            fontSize: "0.68rem",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          },
+        },
+      },
+
+      MuiTableCell: {
+        styleOverrides: {
+          head: { fontWeight: 600, color: c.ink60, borderBottomColor: c.gridline },
+          root: { borderBottomColor: c.gridline },
+        },
+      },
+
+      MuiAppBar: { defaultProps: { elevation: 0 } },
     },
-  },
-});
-
-// Exported separately so RiskBadge (later, Task 22) and any component
-// needing the raw signal colors directly can import without pulling
-// the whole theme object.
-export const riskColors = {
-  LOW: colors.emerald,
-  MEDIUM: colors.amber,
-  HIGH: colors.crimson,
-  CRITICAL: colors.crimson,
-};
-
-export default theme;
+  });
+}

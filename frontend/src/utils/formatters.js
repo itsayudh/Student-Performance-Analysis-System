@@ -12,6 +12,9 @@
 // Kept in sync manually — if the backend thresholds ever change,
 // this must be updated too, since there's no shared schema between
 // Python and JS for this logic.
+
+import { gradeScale, riskScale } from "../theme/tokens";
+
 export function scoreToGrade(score) {
   if (score >= 90) return "A+";
   if (score >= 80) return "A";
@@ -24,24 +27,9 @@ export function scoreToGrade(score) {
   return "E";
 }
 
-// Color for each grade, matching PieChart.jsx's DEFAULT_COLORS exactly
-// (emerald for top grades, ambers in the middle, crimson at the bottom).
-// Centralized here so any component needing a grade color (not just
-// PieChart) can import one consistent mapping instead of redefining it.
-const GRADE_COLORS = {
-  "A+": "#1F9D63",
-  A: "#2ECC71",
-  "B+": "#4C5FD5",
-  B: "#7B8FE8",
-  "C+": "#D89614",
-  C: "#F0B429",
-  "D+": "#F0997B",
-  D: "#D14343",
-  E: "#A12D2D",
-};
-
+// Color for each grade, now pulling directly from centralized design tokens.
 export function gradeColor(grade) {
-  return GRADE_COLORS[grade] || "#6B7080"; // neutral gray fallback for unknown input
+  return gradeScale[grade] || "#6B7080"; // neutral gray fallback for unknown input
 }
 
 // Formats a raw percentage score for display: 73.456 -> "73.5%"
@@ -97,16 +85,7 @@ export function formatRelativeTime(dateStr) {
   return `${diffDays} days ago`;
 }
 
-// Risk-level color, matching RiskBadge.jsx's STYLES dot colors exactly.
-// Useful for anywhere that needs the raw color without rendering the
-// full badge component (e.g. a chart bar colored by risk level).
-const RISK_COLORS = {
-  LOW: "#1F9D63",
-  MEDIUM: "#D89614",
-  HIGH: "#D14343",
-  CRITICAL: "#D14343",
-};
-
+// Risk-level color, now pulling directly from centralized design tokens.
 export function riskColor(level) {
-  return RISK_COLORS[level] || "#6B7080";
+  return riskScale[level] || "#6B7080";
 }

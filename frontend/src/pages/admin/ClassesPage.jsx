@@ -14,6 +14,7 @@ import Grid from "@mui/material/Grid";
 import DataTable from "../../components/common/DataTable";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
 import api from "../../services/api";
+import { PageHeader } from "../../components/gridline";
 
 // Admin portal — Classes: CRUD + subject/teacher assignment manager.
 //
@@ -238,10 +239,10 @@ export default function ClassesPage() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4">Classes</Typography>
-        <Button variant="contained" onClick={openCreate}>Add Class</Button>
-      </Box>
+      <PageHeader 
+        title="Classes" 
+        action={<Button variant="contained" onClick={openCreate}>Add Class</Button>} 
+      />
 
       {banner && (
         <Alert severity={banner.severity} sx={{ mb: 2 }} onClose={() => setBanner(null)}>

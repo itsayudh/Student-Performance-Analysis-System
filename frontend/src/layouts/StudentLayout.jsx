@@ -9,6 +9,7 @@ import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
+import { color } from "../theme/tokens";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/student/dashboard", icon: <DashboardIcon /> },
@@ -33,8 +34,8 @@ const NAV_ITEMS = [
 export default function StudentLayout() {
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      <Navbar title="SPAS — Student Portal" />
-      <Sidebar items={NAV_ITEMS} />
+      <Navbar title="STUDENT PORTAL" accent={color.roleStudent} />
+      <Sidebar items={NAV_ITEMS} accent={color.roleStudent} />
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
         <Outlet />

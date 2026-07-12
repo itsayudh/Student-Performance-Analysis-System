@@ -17,6 +17,8 @@ import {
 } from "../../services/analyticsService";
 import api from "../../services/api";
 import { formatGPA, formatPercentage } from "../../utils/formatters";
+import { Panel, PageHeader, ScaleMark, GPA_ZONES, PERCENT_ZONES,TickerNumber } from "../../components/gridline";
+import { numSx, color } from "../../theme/tokens";
 
 // Admin portal — Analytics page.
 //
@@ -115,45 +117,50 @@ export default function AnalyticsPage() {
     );
   }
 
+  // Raw values + formatter per KPI (was pre-formatted strings) so
+  // TickerNumber can animate the number and format each frame.
+  const count = (n) => Math.round(n);
   const KPIS = [
-    { label: "Students", value: dashboard.total_students },
-    { label: "Teachers", value: dashboard.total_teachers },
-    { label: "Classes", value: dashboard.total_classes },
-    { label: "Overall GPA", value: formatGPA(dashboard.overall_gpa_avg) },
-    { label: "Attendance", value: formatPercentage(dashboard.overall_attendance_rate) },
-    { label: "At-risk students", value: dashboard.at_risk_students, alert: dashboard.at_risk_students > 0 },
-    { label: "Pass rate", value: formatPercentage(dashboard.pass_rate_this_semester) },
-    { label: "Recent alerts", value: dashboard.recent_alerts, alert: dashboard.recent_alerts > 0 },
+    { label: "Students", value: dashboard.total_students, format: count },
+    { label: "Teachers", value: dashboard.total_teachers, format: count },
+    { label: "Classes", value: dashboard.total_classes, format: count },
+    { label: "Overall GPA", value: dashboard.overall_gpa_avg, format: formatGPA },
+    { label: "Attendance", value: dashboard.overall_attendance_rate, format: formatPercentage },
+    { label: "At-risk students", value: dashboard.at_risk_students, format: count, alert: dashboard.at_risk_students > 0 },
+    { label: "Pass rate", value: dashboard.pass_rate_this_semester, format: formatPercentage },
+    { label: "Recent alerts", value: dashboard.recent_alerts, format: count, alert: dashboard.recent_alerts > 0 },
   ];
-
   const pickerOptions = drillMode === "class" ? classes : subjects;
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Analytics
-      </Typography>
+      <PageHeader title="Analytics" />
 
       {/* ── Section 1: institution KPIs ── */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {KPIS.map((kpi) => (
           <Grid item xs={6} sm={3} key={kpi.label}>
-            <Box sx={cardSx}>
+            <Panel sx={{ height: "100%" }}>
               <Typography variant="body2" color="text.secondary">
                 {kpi.label}
               </Typography>
-              <Typography
-                variant="h4"
-                sx={{ color: kpi.alert ? "#D14343" : "inherit" }}
-              >
-                {kpi.value}
-              </Typography>
-            </Box>
+              <TickerNumber
+                value={kpi.value}
+                format={kpi.format}
+                sx={{ color: kpi.alert ? color.danger : "inherit" }}
+              />
+              {kpi.scaleType === "gpa" && kpi.raw !== undefined && (
+                <ScaleMark value={kpi.raw} zones={GPA_ZONES} max={4} />
+              )}
+              {kpi.scaleType === "percent" && kpi.raw !== undefined && (
+                <ScaleMark value={kpi.raw} zones={PERCENT_ZONES} />
+              )}
+            </Panel>
           </Grid>
         ))}
       </Grid>
 
-      <Box sx={{ ...cardSx, mb: 4 }}>
+      <Panel sx={{ mb: 4 }}>
         <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
           Department Performance (avg GPA)
         </Typography>
@@ -167,7 +174,7 @@ export default function AnalyticsPage() {
             { threshold: 2.5, color: "#D89614" },
           ]}
         />
-      </Box>
+      </Panel>
 
       {/* ── Section 2: class/subject drill-down ── */}
       <Typography variant="h5" sx={{ mb: 2 }}>
@@ -227,7 +234,7 @@ export default function AnalyticsPage() {
       {drillData && !drillLoading && (
         <Grid container spacing={2}>
           <Grid item xs={12} md={5}>
-            <Box sx={cardSx}>
+            <Panel sx={{ height: "100%" }}>
               <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
                 {drillMode === "class"
                   ? drillData.class_name
@@ -236,28 +243,28 @@ export default function AnalyticsPage() {
               {drillMode === "class" ? (
                 <>
                   <StatLine label="Students" value={drillData.student_count} />
-                  <StatLine label="Class GPA avg" value={formatGPA(drillData.class_gpa_avg)} />
-                  <StatLine label="Attendance rate" value={formatPercentage(drillData.attendance_rate)} />
+                  <StatLine label="Class GPA avg" value={formatGPA(drillData.class_gpa_avg)} raw={drillData.class_gpa_avg} scaleType="gpa" />
+                  <StatLine label="Attendance rate" value={formatPercentage(drillData.attendance_rate)} raw={drillData.attendance_rate} scaleType="percent" />
                   <StatLine label="At-risk count" value={drillData.at_risk_count} />
                 </>
               ) : (
                 <>
                   <StatLine label="Enrolled" value={drillData.enrolled_count} />
-                  <StatLine label="Class average" value={formatPercentage(drillData.class_average)} />
-                  <StatLine label="Pass rate" value={formatPercentage(drillData.pass_rate)} />
-                  <StatLine label="Attendance avg" value={formatPercentage(drillData.attendance_avg)} />
+                  <StatLine label="Class average" value={formatPercentage(drillData.class_average)} raw={drillData.class_average} scaleType="percent" />
+                  <StatLine label="Pass rate" value={formatPercentage(drillData.pass_rate)} raw={drillData.pass_rate} scaleType="percent" />
+                  <StatLine label="Attendance avg" value={formatPercentage(drillData.attendance_avg)} raw={drillData.attendance_avg} scaleType="percent" />
                   <StatLine label="Difficulty score" value={drillData.difficulty_score} />
                 </>
               )}
-            </Box>
+            </Panel>
           </Grid>
           <Grid item xs={12} md={7}>
-            <Box sx={cardSx}>
+            <Panel sx={{ height: "100%" }}>
               <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
                 Grade Distribution
               </Typography>
               <PieChart data={toGradePieData(drillData.grade_distribution)} />
-            </Box>
+            </Panel>
           </Grid>
         </Grid>
       )}
@@ -265,22 +272,27 @@ export default function AnalyticsPage() {
   );
 }
 
-function StatLine({ label, value }) {
+function StatLine({ label, value, raw, scaleType }) {
   return (
-    <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.75 }}>
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-        {value}
-      </Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", py: 0.75 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Typography variant="body2" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, ...numSx }}>
+          {value}
+        </Typography>
+      </Box>
+      {scaleType === "gpa" && raw !== undefined && (
+        <Box sx={{ mt: 0.5 }}>
+          <ScaleMark value={raw} zones={GPA_ZONES} max={4} />
+        </Box>
+      )}
+      {scaleType === "percent" && raw !== undefined && (
+        <Box sx={{ mt: 0.5 }}>
+          <ScaleMark value={raw} zones={PERCENT_ZONES} />
+        </Box>
+      )}
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};

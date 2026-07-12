@@ -7,6 +7,8 @@ import Chip from "@mui/material/Chip";
 import { useMarks } from "../../hooks/useMarks";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { formatPercentage, gradeColor } from "../../utils/formatters";
+import { Panel, SectionHeading, PageHeader } from "../../components/gridline";
+import { numSx } from "../../theme/tokens";
 
 // Student portal — My Marks: per-subject cards with every assessment.
 //
@@ -43,9 +45,7 @@ export default function MyMarksPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        My Marks
-      </Typography>
+      <PageHeader title="My Marks" />
 
       {marks.length === 0 ? (
         <Typography variant="body2" color="text.secondary">
@@ -55,12 +55,12 @@ export default function MyMarksPage() {
         <Grid container spacing={2}>
           {marks.map((m) => (
             <Grid item xs={12} md={6} key={m.subject_id}>
-              <Box sx={cardSx}>
+              <Panel>
                 {/* Subject header: name + overall standing */}
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                  <Typography variant="subtitle1">
+                  <SectionHeading>
                     {m.subject_name || m.subject_code}
-                  </Typography>
+                  </SectionHeading>
                   <Chip
                     size="small"
                     label={`${m.current_grade} · ${formatPercentage(m.current_percentage)}`}
@@ -80,7 +80,7 @@ export default function MyMarksPage() {
                 <AssessmentRow label="Assignments" items={m.assignment} />
                 <AssessmentRow label="Midterm" items={m.midterm ? [m.midterm] : null} />
                 <AssessmentRow label="Final" items={m.final ? [m.final] : null} />
-              </Box>
+              </Panel>
             </Grid>
           ))}
         </Grid>
@@ -102,17 +102,10 @@ function AssessmentRow({ label, items }) {
           Not yet recorded
         </Typography>
       ) : (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        <Typography variant="body2" sx={{ ...numSx, fontWeight: 600 }}>
           {items.map((i) => `${i.score}/${i.max_score}`).join(" · ")}
         </Typography>
       )}
     </Box>
   );
 }
-
-const cardSx = {
-  backgroundColor: "#FFFFFF",
-  border: "1px solid #E4E6EB",
-  borderRadius: "12px",
-  p: 2.5,
-};

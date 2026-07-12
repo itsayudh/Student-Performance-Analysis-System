@@ -8,7 +8,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-
+import { chartAxisTick, chartGridStroke, chartTooltipStyle, chartSeriesColor, chartEmptyStyle } from "../../theme/chartTokens";
 // Generic bar chart for comparison data (subject scores,
 // department GPA, grade distribution counts, etc).
 //
@@ -23,9 +23,9 @@ import {
 //                 "subject score" bar turn red if it's failing, amber if borderline,
 //                 without the caller having to pre-process the data.
 //   yDomain     - optional [min, max] to fix the y-axis range
-function BarChart({ data, xKey, yKey, color = "#4C5FD5", colorRules, yDomain }) {
+function BarChart({ data, xKey, yKey, color = chartSeriesColor, colorRules, yDomain }) {
   if (!data || data.length === 0) {
-    return <p style={{ fontSize: "13px", color: "#6B7080" }}>No data available yet.</p>;
+    return <p style={chartEmptyStyle}>No data available yet.</p>;
   }
 
   // Determine the color for a single bar based on its value,
@@ -41,25 +41,21 @@ function BarChart({ data, xKey, yKey, color = "#4C5FD5", colorRules, yDomain }) 
   return (
     <ResponsiveContainer width="100%" height={200}>
       <RechartsBarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-        <CartesianGrid stroke="#E4E6EB" vertical={false} />
+        <CartesianGrid stroke={chartGridStroke} vertical={false} />
         <XAxis
           dataKey={xKey}
-          tick={{ fontSize: 11, fill: "#6B7080" }}
-          axisLine={{ stroke: "#E4E6EB" }}
+          tick={chartAxisTick}
+          axisLine={{ stroke: chartGridStroke }}
           tickLine={false}
         />
         <YAxis
           domain={yDomain || ["auto", "auto"]}
-          tick={{ fontSize: 11, fill: "#6B7080" }}
+          tick={chartAxisTick}
           axisLine={false}
           tickLine={false}
         />
         <Tooltip
-          contentStyle={{
-            fontSize: "12px",
-            borderRadius: "8px",
-            border: "1px solid #E4E6EB",
-          }}
+          contentStyle={chartTooltipStyle}
         />
         <Bar dataKey={yKey} radius={[6, 6, 0, 0]} maxBarSize={36}>
           {data.map((entry, index) => (

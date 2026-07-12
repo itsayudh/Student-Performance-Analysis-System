@@ -9,6 +9,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { color } from "../../theme/tokens";
+import { chartAxisTick, chartGridStroke, chartTooltipStyle, chartSeriesColor, chartEmptyStyle } from "../../theme/chartTokens";
+
 // Radar/spider chart comparing a student's score against the
 // class average, across multiple subjects at once.
 //
@@ -19,44 +22,40 @@ import {
 //          (with class_avg added — see usage note below).
 function RadarChart({ data }) {
   if (!data || data.length === 0) {
-    return <p style={{ fontSize: "13px", color: "#6B7080" }}>No data available yet.</p>;
+    return <p style={chartEmptyStyle}>No data available yet.</p>;
   }
 
   return (
     <ResponsiveContainer width="100%" height={260}>
       <RechartsRadarChart data={data}>
-        <PolarGrid stroke="#E4E6EB" />
+        <PolarGrid stroke={chartGridStroke} />
         <PolarAngleAxis
           dataKey="subject"
-          tick={{ fontSize: 11, fill: "#6B7080" }}
+          tick={chartAxisTick}
         />
         <PolarRadiusAxis
           domain={[0, 100]}
-          tick={{ fontSize: 10, fill: "#6B7080" }}
+          tick={chartAxisTick}
           axisLine={false}
         />
         <Radar
           name="Class average"
           dataKey="class_avg"
-          stroke="#6B7080"
-          fill="#6B7080"
+          stroke={color.ink30}
+          fill={color.ink30}
           fillOpacity={0.12}
           strokeWidth={1.5}
         />
         <Radar
           name="Your score"
           dataKey="score"
-          stroke="#4C5FD5"
-          fill="#4C5FD5"
+          stroke={chartSeriesColor}
+          fill={chartSeriesColor}
           fillOpacity={0.25}
           strokeWidth={2}
         />
         <Tooltip
-          contentStyle={{
-            fontSize: "12px",
-            borderRadius: "8px",
-            border: "1px solid #E4E6EB",
-          }}
+          contentStyle={chartTooltipStyle}
         />
         <Legend wrapperStyle={{ fontSize: "12px" }} iconType="circle" iconSize={9} />
       </RechartsRadarChart>

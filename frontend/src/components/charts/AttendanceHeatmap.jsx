@@ -1,3 +1,6 @@
+import { chartAxisTick, chartGridStroke, chartTooltipStyle, chartSeriesColor, chartEmptyStyle } from "../../theme/chartTokens";
+import { color, font } from "../../theme/tokens";
+
 // Calendar-style attendance heatmap.
 // Props: records [{ date: "YYYY-MM-DD", status }], month (JS Date, any day in month)
 //
@@ -52,11 +55,12 @@ function AttendanceHeatmap({ records = [], month = new Date() }) {
     justifyContent: "center",
     fontSize: 12,
     fontWeight: 600,
+    fontFamily: font.mono,
   };
 
   return (
     <div>
-      <p style={{ textAlign: "center", fontSize: 13, color: "#6B7080", margin: "0 0 8px" }}>
+      <p style={{ textAlign: "center", fontSize: 13, color: color.ink60, margin: "0 0 8px" }}>
         {monthLabel}
       </p>
 
@@ -65,7 +69,7 @@ function AttendanceHeatmap({ records = [], month = new Date() }) {
         {WEEKDAY_LETTERS.map((letter, i) => (
           <div
             key={i}
-            style={{ ...cellBase, height: 20, color: "#9AA0AB", fontWeight: 700 }}
+            style={{ ...cellBase, height: 20, color: color.ink30, fontWeight: 700 }}
           >
             {letter}
           </div>
@@ -86,8 +90,8 @@ function AttendanceHeatmap({ records = [], month = new Date() }) {
                 title={status ? `${day}: ${status}` : `${day}: no record`}
                 style={{
                   ...cellBase,
-                  backgroundColor: status ? STATUS_COLORS[status] : "#F0F1F3",
-                  color: status ? "#FFFFFF" : "#9AA0AB",
+                  backgroundColor: status ? STATUS_COLORS[status] : color.gridline,
+                  color: status ? "#FFFFFF" : color.ink30,
                 }}
               >
                 {day}
@@ -99,9 +103,9 @@ function AttendanceHeatmap({ records = [], month = new Date() }) {
 
       {/* Legend */}
       <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 10, fontSize: 12 }}>
-        {Object.entries(STATUS_COLORS).map(([label, color]) => (
-          <span key={label} style={{ display: "flex", alignItems: "center", gap: 4, color: "#4A4F5A" }}>
-            <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: color, display: "inline-block" }} />
+        {Object.entries(STATUS_COLORS).map(([label, colorStr]) => (
+          <span key={label} style={{ display: "flex", alignItems: "center", gap: 4, color: color.ink60 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: colorStr, display: "inline-block" }} />
             {label.charAt(0) + label.slice(1).toLowerCase()}
           </span>
         ))}
