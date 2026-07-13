@@ -120,13 +120,7 @@ export default function TeachersPage() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() =>
-              setAlert({
-                severity: "info",
-                messages:
-                  "Add-teacher page isn't in the task split — teachers can be created via the API for now, or we add the page later.",
-              })
-            }
+            onClick={() => navigate("/admin/teachers/add")}
           >
             Add Teacher
           </Button>

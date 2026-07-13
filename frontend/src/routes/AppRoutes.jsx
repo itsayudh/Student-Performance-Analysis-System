@@ -15,6 +15,7 @@ import StudentDetailPage from "../pages/admin/StudentDetailPage";
 import TeachersPage from "../pages/admin/TeachersPage";
 import TeacherDetailPage from "../pages/admin/TeacherDetailPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import AddTeacherPage from "../pages/admin/AddTeacherPage";
 
 
 
@@ -64,6 +65,7 @@ export default function AppRoutes() {
             <Route path="/admin/students/:id" element={<StudentDetailPage />} />
             <Route path="/admin/teachers" element={<TeachersPage />} />
             <Route path="/admin/teachers/:id" element={<TeacherDetailPage />} />
+            <Route path="/admin/teachers/add" element={<AddTeacherPage />} />
             <Route
               path="/admin/classes"
               element={<ClassesPage />}  
