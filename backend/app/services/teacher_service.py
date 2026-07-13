@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from fastapi import HTTPException
 
+import secrets
+
 from app.models.teacher import Teacher
 from app.models.user import User
 from app.utils.security import hash_password
@@ -61,7 +63,7 @@ def create_teacher(db: Session, data: dict):
             detail="Teacher with this code or email already exists"
         )
 
-    temp_password = str(uuid.uuid4())[:10]
+    temp_password = secrets.token_urlsafe(8)
 
     user = User(
         id            = uuid.uuid4(),

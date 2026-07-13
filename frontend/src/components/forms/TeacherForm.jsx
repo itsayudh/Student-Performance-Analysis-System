@@ -145,7 +145,7 @@ export default function TeacherForm({
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
-            label="Joining Date *"
+            label="Joining Date"
             type="date"
             InputLabelProps={{ shrink: true }}
             {...fieldProps("joining_date")}

@@ -150,7 +150,7 @@ export default function StudentForm({
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
-            label="Date of Birth"
+            label=""
             type="date"
             InputLabelProps={{ shrink: true }}
             {...fieldProps("date_of_birth")}
