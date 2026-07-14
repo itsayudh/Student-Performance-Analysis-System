@@ -16,6 +16,9 @@ import {
 } from "../../services/notificationService";
 import api from "../../services/api";
 import { formatRelativeTime } from "../../utils/formatters";
+import { Panel} from "../../components/gridline";
+
+
 
 // Teacher portal — Early Warning page.
 //
@@ -160,16 +163,13 @@ export default function EarlyWarningPage() {
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, maxWidth: 760 }}>
           {notifications.map((n) => (
-            <Box
+            <Panel
               key={n.id}
               sx={{
                 display: "flex",
                 gap: 2,
                 alignItems: "flex-start",
                 p: 2,
-                borderRadius: "10px",
-                border: "1px solid #E4E6EB",
-                backgroundColor: "#FFFFFF",
                 opacity: n.is_resolved ? 0.6 : 1,
               }}
             >
@@ -192,7 +192,7 @@ export default function EarlyWarningPage() {
                   Resolve
                 </Button>
               )}
-            </Box>
+            </Panel>
           ))}
         </Box>
       )}

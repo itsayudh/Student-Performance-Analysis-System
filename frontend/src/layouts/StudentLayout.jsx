@@ -10,6 +10,7 @@ import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
 import { color } from "../theme/tokens";
+import PsychologyIcon from "@mui/icons-material/Psychology";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/student/dashboard", icon: <DashboardIcon /> },
@@ -24,6 +25,8 @@ const NAV_ITEMS = [
     path: "/student/performance",
     icon: <QueryStatsIcon />,
   },
+  
+  { label: "Predictions", path: "/student/predictions", icon: <PsychologyIcon /> },
   {
     label: "Recommendations",
     path: "/student/recommendations",

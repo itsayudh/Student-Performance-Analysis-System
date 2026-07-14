@@ -23,7 +23,7 @@ import AddTeacherPage from "../pages/admin/AddTeacherPage";
 
 // added by ayudh
 import AnalyticsPage from "../pages/admin/AnalyticsPage";
-import PredictionsPage from "../pages/admin/PredictionsPage";
+import PredictionsPage from "../pages/shared/PredictionsPage"
 import StudentPerformancePage from "../pages/teacher/StudentPerformancePage";
 import EarlyWarningPage from "../pages/teacher/EarlyWarningPage";
 import MyPerformancePage from "../pages/student/MyPerformancePage";
@@ -38,6 +38,7 @@ import ReportsPage from "../pages/admin/ReportsPage";
 import TeacherDashboard from "../pages/teacher/TeacherDashboard";
 import StudentDashboard from "../pages/student/StudentDashboard";
 import { login as apiLogin } from "../services/authService";
+import ChangePasswordPage from "../pages/shared/ChangePasswordPage";
 
 // TODO: replace each placeholder below with the real page import once built
 function Placeholder({ label }) {
@@ -106,6 +107,7 @@ export default function AppRoutes() {
               path="/teacher/early-warning"
               element={<EarlyWarningPage />}
             />
+            <Route path="/teacher/predictions" element={<PredictionsPage />} />
           </Route>
         </Route>
 
@@ -132,8 +134,12 @@ export default function AppRoutes() {
               path="/student/recommendations"
               element={<RecommendationsPage />}
             />
+            <Route path="/student/predictions" element={<PredictionsPage />} />
           </Route>
         </Route>
+
+        
+        <Route path="/change-password" element={<ChangePasswordPage />} />
       </Route>
 
       {/* ---------- Fallback ---------- */}

@@ -111,11 +111,8 @@ export default function TeachersPage() {
     <>
       <PageHeader
         title="Teachers"
-        subtitle="Manage all teacher records"
-        breadcrumbs={[
-          { label: "Dashboard", to: "/admin/dashboard" },
-          { label: "Teachers" },
-        ]}
+        //subtitle="Manage all teacher records"
+        
         action={
           <Button
             variant="contained"

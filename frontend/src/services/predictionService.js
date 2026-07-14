@@ -21,3 +21,12 @@ export const getStudentPredictions = (studentId) => {
 export const getLatestPrediction = (studentId) => {
   return api.get(`/api/v1/predictions/${studentId}/latest`);
 };
+
+// GET /api/v1/predictions/{student_id}/autofill — 5 of 7 fields computed
+// from real attendance/marks/GPA records. The other 2 keys come back
+// null (no DB source) — the caller must treat null as "leave blank."
+export const getPredictionAutofill = (studentId, subjectId) => {
+  return api.get(`/api/v1/predictions/${studentId}/autofill`, {
+    params: { subject_id: subjectId || undefined },
+  });
+};

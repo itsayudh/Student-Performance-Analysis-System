@@ -22,9 +22,10 @@ export default function AddTeacherPage() {
       // surface it once, quoted so its boundaries are unambiguous.
       const result = await createTeacher(payload);
 
-      const flash = result?.temp_password
-        ? `${payload.first_name} ${payload.last_name} was added. Temporary password (copy exactly, without quotes): "${result.temp_password}"`
-        : `${payload.first_name} ${payload.last_name} was added successfully.`;
+      const flash =
+        result?.temp_password && result?.email_sent === false
+          ? `${result.message} Temporary password (copy exactly, without quotes): "${result.temp_password}"`
+          : result?.message || `${payload.first_name} ${payload.last_name} was added.`;
 
       navigate("/admin/teachers", {
         replace: true,

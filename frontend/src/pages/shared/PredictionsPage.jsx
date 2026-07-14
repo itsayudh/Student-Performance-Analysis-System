@@ -15,13 +15,17 @@ import TableRow from "@mui/material/TableRow";
 import RiskBadge from "../../components/predictions/RiskBadge";
 import PredictionCard from "../../components/predictions/PredictionCard";
 import { useRunPrediction, usePredictionHistory } from "../../hooks/usePredictions";
+import { getPredictionAutofill } from "../../services/predictionService";
 import api from "../../services/api";
 import { formatDate, formatFailureProbability } from "../../utils/formatters";
 import { Panel, PageHeader, SectionHeading } from "../../components/gridline";
-import { numSx } from "../../theme/tokens";
+import { color, numSx } from "../../theme/tokens";
+import { useAuthContext } from "../../contexts/AuthContext";
 
-// Admin portal — Predictions page. The only WRITE-path page in Ayudh's
-// Layer E.
+// Predictions page — shared across Admin, Teacher, and Student portals
+// (moved from pages/admin/ since it's no longer admin-exclusive; the
+// doc's folder map never anticipated a shared pages/ folder, logged as
+// a structure deviation).
 //
 // DATA FLOW (the important one — trace it in prediction_service.py):
 //   POST /api/v1/predictions/predict does THREE things server-side:
@@ -31,39 +35,43 @@ import { numSx } from "../../theme/tokens";
 //   So one click here feeds RecommendationsPage (student portal) and
 //   EarlyWarningPage (teacher portal) — nothing else needs to be called.
 //
-//   Because the server mutates MORE state than the response body reports,
-//   we REFETCH the history list after submit instead of patching local
-//   state (contrast with the mark-as-read / resolve handlers on the
-//   other pages, where the response fully describes the change).
+// ROLE BEHAVIOR:
+//   ADMIN/TEACHER — full student picker, run predictions for anyone.
+//   STUDENT — no picker; always predicts for themselves. The backend
+//     enforces this server-side too (ownership check in predictions.py,
+//     same pattern as the Reports IDOR fix) — the frontend hiding the
+//     picker is a UX nicety, not the actual security boundary.
+//
+// AUTOFILL: on student selection, 5 of 7 fields are pre-filled from
+// real attendance/marks/GPA records via GET /predictions/{id}/autofill.
+// study_hours_per_week and subject_difficulty_score have NO database
+// source (confirmed during reconnaissance) and stay manual-entry,
+// labeled accordingly.
 
-// Field definitions for PredictionInput (matches the FastAPI schema
-// exactly — names, not just types, must match or Pydantic returns 422).
-// min/max mirror the backend's validation so most errors are caught
-// client-side before a request is ever fired.
 const FEATURE_FIELDS = [
   { name: "attendance_percentage",    label: "Attendance %",            min: 0, max: 100 },
   { name: "quiz_score_avg",           label: "Quiz average",            min: 0, max: 100 },
   { name: "assignment_score_avg",     label: "Assignment average",      min: 0, max: 100 },
   { name: "midterm_score",            label: "Midterm score",           min: 0, max: 100 },
   { name: "historical_gpa",           label: "Historical GPA",          min: 0, max: 4,   step: 0.01 },
-  { name: "study_hours_per_week",     label: "Study hours / week",      min: 0, max: 80 },
-  { name: "subject_difficulty_score", label: "Subject difficulty (0-1)", min: 0, max: 1, step: 0.01 },
+  { name: "study_hours_per_week",     label: "Study hours / week (manual — no record source)", min: 0, max: 80 },
+  { name: "subject_difficulty_score", label: "Subject difficulty 0-1 (manual — no record source)", min: 0, max: 1, step: 0.01 },
 ];
 
 const EMPTY_FORM = Object.fromEntries(FEATURE_FIELDS.map((f) => [f.name, ""]));
 
 export default function PredictionsPage() {
-  // ── Student picker (same direct-api pattern + comment as EarlyWarningPage:
-  //    studentService.js is Roshan's, swap when it exists) ──
+  const { user } = useAuthContext();
+  const isStudent = user?.role === "STUDENT";
+
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentsLoading, setStudentsLoading] = useState(true);
 
-  // ── Form state ──
   const [form, setForm] = useState(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [autofillNote, setAutofillNote] = useState(null);
 
-  // ── Layer D hooks: one ACTION hook, one FETCH hook ──
   const { submit, result, submitting, error: submitError } = useRunPrediction();
   const {
     predictions,
@@ -72,24 +80,63 @@ export default function PredictionsPage() {
     refetch: refetchHistory,
   } = usePredictionHistory(selectedStudent?.id);
 
+  // Student picker data — SKIPPED for students, who don't browse a
+  // roster (they can't call GET /students meaningfully for this).
   useEffect(() => {
+    if (isStudent) {
+      setStudentsLoading(false);
+      return;
+    }
     api
       .get("/students", { params: { page_size: 100 } })
       .then((res) => setStudents(res.data.items))
-      .catch(() => {}) // student list failure surfaces via empty picker
+      .catch(() => {})
       .finally(() => setStudentsLoading(false));
-  }, []);
+  }, [isStudent]);
+
+  // For a student, "selected student" is always themselves — set once
+  // from the login-enriched student_id, no picker interaction needed.
+  useEffect(() => {
+    if (isStudent && user?.student_id) {
+      setSelectedStudent({
+        id: user.student_id,
+        first_name: user.full_name?.split(" ")[0] || "You",
+        last_name: "",
+        student_code: "",
+      });
+    }
+  }, [isStudent, user]);
+
+  // Autofill — fires whenever the selected student changes. For a
+  // student that's once (on mount); for admin/teacher, every time the
+  // picker changes.
+  useEffect(() => {
+    if (!selectedStudent?.id) return;
+
+    getPredictionAutofill(selectedStudent.id)
+      .then((res) => {
+        const a = res.data;
+        // Only fill fields with a REAL (non-null) value — never coerce
+        // null to 0, which would silently claim "0% attendance" for a
+        // student with no records yet.
+        setForm((prev) => ({
+          ...prev,
+          ...(a.attendance_percentage != null && { attendance_percentage: String(a.attendance_percentage) }),
+          ...(a.quiz_score_avg != null && { quiz_score_avg: String(a.quiz_score_avg) }),
+          ...(a.assignment_score_avg != null && { assignment_score_avg: String(a.assignment_score_avg) }),
+          ...(a.midterm_score != null && { midterm_score: String(a.midterm_score) }),
+          ...(a.historical_gpa != null && { historical_gpa: String(a.historical_gpa) }),
+        }));
+        setAutofillNote("Fields below auto-filled from records where available. All values remain editable.");
+      })
+      .catch(() => setAutofillNote(null));
+  }, [selectedStudent?.id]);
 
   const handleFieldChange = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
-    // Clear that field's error as soon as the user edits it —
-    // stale error messages under a corrected field feel broken.
     setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  // Client-side validation mirroring the backend ranges. This never
-  // REPLACES backend validation (the backend must still enforce it —
-  // never trust the client), it just gives instant feedback.
   const validate = () => {
     const errors = {};
     for (const f of FEATURE_FIELDS) {
@@ -111,27 +158,19 @@ export default function PredictionsPage() {
     if (!selectedStudent || !validate()) return;
 
     const payload = {
+      // Sent for ADMIN/TEACHER convenience; a STUDENT caller has this
+      // silently overridden server-side regardless of what's here —
+      // see the ownership check in predictions.py.
       student_id: selectedStudent.id,
-      subject_id: null, // optional in PredictionInput; institution-wide run
-      // Convert form strings -> numbers. TextField values are always
-      // strings; Pydantic would coerce "82.5" fine, but sending real
-      // numbers keeps the JSON honest to the schema's declared types.
+      subject_id: null,
       ...Object.fromEntries(
         FEATURE_FIELDS.map((f) => [f.name, Number(form[f.name])])
       ),
     };
 
     submit(payload)
-      .then(() => {
-        // Server-side, this run also just wrote to `predictions` —
-        // the history table below is now stale, so refetch it.
-        refetchHistory();
-      })
-      .catch(() => {
-        // submitError from the hook already carries the failure;
-        // nothing extra to do here — the catch exists because the
-        // hook re-throws (see useRunPrediction's comment).
-      });
+      .then(() => refetchHistory())
+      .catch(() => {});
   };
 
   return (
@@ -146,20 +185,28 @@ export default function PredictionsPage() {
               Run a new prediction
             </SectionHeading>
 
-            <Autocomplete
-              sx={{ mb: 2 }}
-              options={students}
-              loading={studentsLoading}
-              value={selectedStudent}
-              onChange={(_, value) => setSelectedStudent(value)}
-              getOptionLabel={(s) =>
-                `${s.first_name} ${s.last_name} (${s.student_code})`
-              }
-              isOptionEqualToValue={(opt, val) => opt.id === val.id}
-              renderInput={(params) => (
-                <TextField {...params} label="Student" size="small" />
-              )}
-            />
+            {!isStudent && (
+              <Autocomplete
+                sx={{ mb: 2 }}
+                options={students}
+                loading={studentsLoading}
+                value={selectedStudent}
+                onChange={(_, value) => setSelectedStudent(value)}
+                getOptionLabel={(s) =>
+                  `${s.first_name} ${s.last_name} (${s.student_code})`
+                }
+                isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                renderInput={(params) => (
+                  <TextField {...params} label="Student" size="small" />
+                )}
+              />
+            )}
+
+            {autofillNote && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {autofillNote}
+              </Alert>
+            )}
 
             <Grid container spacing={1.5}>
               {FEATURE_FIELDS.map((f) => (
@@ -181,8 +228,6 @@ export default function PredictionsPage() {
 
             {submitError && (
               <Alert severity="error" sx={{ mt: 1, mb: 1 }}>
-                {/* 422 = Pydantic rejected a field server-side (should be
-                    rare given client validation); anything else = generic */}
                 {submitError.response?.status === 422
                   ? "The backend rejected one or more field values."
                   : "Prediction failed. Please try again."}
@@ -207,8 +252,6 @@ export default function PredictionsPage() {
 
         {/* ── Right column: latest result + history ── */}
         <Grid item xs={12} md={7}>
-          {/* result stays null until the first successful submit —
-              PredictionCard's empty state covers that gracefully */}
           <SectionHeading sx={{ mb: 1.5 }}>
             Result
           </SectionHeading>
@@ -225,13 +268,15 @@ export default function PredictionsPage() {
 
           {!selectedStudent ? (
             <Typography variant="body2" color="text.secondary">
-              Select a student to see their prediction history.
+              {isStudent
+                ? "Loading your profile…"
+                : "Select a student to see their prediction history."}
             </Typography>
           ) : historyLoading ? (
             <CircularProgress size={24} />
           ) : predictions.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
-              No predictions yet for this student.
+              No predictions yet{isStudent ? "" : " for this student"}.
             </Typography>
           ) : (
             <Panel>
@@ -260,7 +305,7 @@ export default function PredictionsPage() {
                       </TableCell>
                       <TableCell
                         sx={{
-                          color: p.pass_fail === "PASS" ? "#1F9D63" : "#D14343",
+                          color: p.pass_fail === "PASS" ? color.success : color.danger,
                           fontWeight: 600,
                         }}
                       >

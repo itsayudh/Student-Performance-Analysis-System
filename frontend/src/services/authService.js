@@ -50,3 +50,4 @@ export async function changePassword(currentPassword, newPassword) {
   });
   return data;
 }
+

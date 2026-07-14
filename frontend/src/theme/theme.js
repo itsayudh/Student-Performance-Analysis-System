@@ -69,6 +69,12 @@ export default function buildTheme(mode = "light") {
           root: { border: `1px solid ${c.gridline}`, backgroundImage: "none" },
         },
       },
+      // Card sets its own elevation default separately from Paper —
+      // flatten it too, or Card-based tiles cast shadows in a
+      // shadow-free system.
+      MuiCard: {
+        defaultProps: { elevation: 0 },
+      },
 
       MuiButton: {
         defaultProps: { disableElevation: true },

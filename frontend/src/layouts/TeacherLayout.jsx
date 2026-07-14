@@ -11,6 +11,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Navbar from "../components/common/Navbar";
 import Sidebar from "../components/common/Sidebar";
 import { color } from "../theme/tokens";
+import PsychologyIcon from "@mui/icons-material/Psychology";
 
 const NAV_ITEMS = [
   { label: "Dashboard", path: "/teacher/dashboard", icon: <DashboardIcon /> },
@@ -26,6 +27,8 @@ const NAV_ITEMS = [
     path: "/teacher/performance",
     icon: <QueryStatsIcon />,
   },
+  
+  { label: "Predictions", path: "/teacher/predictions", icon: <PsychologyIcon /> },
   {
     label: "Early Warning",
     path: "/teacher/early-warning",

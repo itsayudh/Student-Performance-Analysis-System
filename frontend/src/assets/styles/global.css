@@ -1,9 +1,6 @@
-/* src/assets/styles/global.css */
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-}
+/* box-sizing is already handled by MUI's CssBaseline reset (injected via
+   the theme) — this file previously also set font-family: Roboto on
+   body, which silently won the cascade over the theme's Public Sans
+   (both are plain `body` selectors of equal specificity; this file's
+   <style> tag happened to land later, so it won). Emptied to stop
+   fighting the theme. */
