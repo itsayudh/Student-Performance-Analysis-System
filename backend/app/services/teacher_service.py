@@ -8,6 +8,7 @@ import secrets
 from app.models.teacher import Teacher
 from app.models.user import User
 from app.utils.security import hash_password
+from app.utils.email import send_temporary_password_email
 
 
 def get_teachers(
@@ -91,10 +92,28 @@ def create_teacher(db: Session, data: dict):
     db.commit()
     db.refresh(teacher)
 
+    # Fire the welcome/temp-password email. Failure here must NOT roll
+    # back the student creation — the account already exists and is
+    # usable; email is a delivery convenience, not a transaction
+    # requirement. We surface success/failure in the response instead
+    # of silently claiming it worked either way.
+    email_sent = send_temporary_password_email(
+        to_email      = data["email"],
+        full_name     = f"{data['first_name']} {data['last_name']}",
+        temp_password = temp_password,
+        role          = "TEACHER",
+    )
+
     return {
         "id": str(teacher.id),
         "employee_code": teacher.employee_code,
-        "message": f"Teacher created. Temporary password sent to {data['email']}",
+        "message": (
+            f"Teacher created. Temporary password emailed to {data['email']}."
+            if email_sent else
+            f"Teacher created, but the welcome email could not be sent. "
+            f"Share the temporary password with the teacher directly."
+        ),
+        "email_sent": email_sent,
         "temp_password": temp_password   # remove in production — email it instead
     }
 

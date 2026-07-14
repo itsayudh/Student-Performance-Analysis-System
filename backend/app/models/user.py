@@ -20,6 +20,8 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False,
                         server_default=func.now(), onupdate=func.now())
+    reset_token        = Column(String(255), nullable=True, index=True)
+    reset_token_expiry = Column(DateTime(timezone=True), nullable=True)
 
     student            = relationship("Student",        back_populates="user", uselist=False)
     teacher            = relationship("Teacher",        back_populates="user", uselist=False)

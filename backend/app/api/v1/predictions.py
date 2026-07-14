@@ -24,6 +24,7 @@ from app.services.prediction_service import (
     run_prediction,
     get_student_predictions,
     get_latest_prediction,
+    get_prediction_autofill,
 )
 
 router = APIRouter(
@@ -48,17 +49,18 @@ router = APIRouter(
 def predict(
     data : PredictionInput,
     db   : Session = Depends(get_db),
-    _user          = Depends(require_role("ADMIN", "TEACHER")),
+    current_user   = Depends(require_role("ADMIN", "TEACHER", "STUDENT")),
 ):
-    """
-    Run ML prediction for a student.
+    # OWNERSHIP CHECK (same pattern as reports.py's IDOR fix): a student
+    # may only ever run a prediction for THEMSELVES. We don't validate
+    # their submitted student_id — we ignore it outright and substitute
+    # their own, so there's no way to target another student even by
+    # tampering with the request body.
+    if current_user.role == "STUDENT":
+        if not current_user.student:
+            raise HTTPException(status_code=403, detail="No student profile linked to this account")
+        data.student_id = str(current_user.student.id)
 
-    - Validates all input fields
-    - Computes engineered features (ca_avg, rule_risk_score)
-    - Runs XGBoost regressor
-    - Saves result to predictions table
-    - Returns full prediction response
-    """
     return run_prediction(db=db, data=data)
 
 
@@ -100,3 +102,32 @@ def get_latest(
             detail      = f"No predictions found for student '{student_id}'."
         )
     return prediction
+
+# ── GET /predictions/{student_id}/autofill ────────────────────────────────────
+
+@router.get(
+    "/{student_id}/autofill",
+    status_code = status.HTTP_200_OK,
+    summary     = "Auto-computed prediction input values from real records",
+    description = (
+        "Computes attendance_percentage, quiz_score_avg, assignment_score_avg, "
+        "midterm_score, and historical_gpa from the student's actual attendance, "
+        "marks, and GPA records. study_hours_per_week and subject_difficulty_score "
+        "are NOT included — no database source exists for either; the frontend "
+        "form leaves those two fields for manual entry."
+    ),
+)
+def autofill(
+    student_id : str,
+    subject_id : str = None,
+    db         : Session = Depends(get_db),
+    current_user        = Depends(require_role("ADMIN", "TEACHER", "STUDENT")),
+):
+    # Same ownership rule as predict(): a student can only autofill
+    # their OWN data.
+    if current_user.role == "STUDENT":
+        if not current_user.student:
+            raise HTTPException(status_code=403, detail="No student profile linked to this account")
+        student_id = str(current_user.student.id)
+
+    return get_prediction_autofill(db=db, student_id=student_id, subject_id=subject_id)
