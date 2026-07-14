@@ -8,6 +8,6 @@
 // export under a name.
 export { default as Panel } from "./Panel";
 export { default as SectionHeading } from "./SectionHeading";
-export { default as PageHeader } from "./PageHeader";
 export { default as ScaleMark, GPA_ZONES, PERCENT_ZONES } from "./ScaleMark";
 export { default as TickerNumber } from "./TickerNumber";
+export { default as PageHeader } from "../common/PageHeader";

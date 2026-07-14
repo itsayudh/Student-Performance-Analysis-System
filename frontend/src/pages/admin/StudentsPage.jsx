@@ -114,11 +114,8 @@ export default function StudentsPage() {
     <>
       <PageHeader
         title="Students"
-        subtitle="Manage all student records"
-        breadcrumbs={[
-          { label: "Dashboard", to: "/admin/dashboard" },
-          { label: "Students" },
-        ]}
+        //subtitle="Manage all student records"
+        
         action={
           <Button
             variant="contained"

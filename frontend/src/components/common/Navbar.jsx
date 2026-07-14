@@ -19,6 +19,7 @@ import { useAuthContext } from "../../contexts/AuthContext";
 import { useThemeToggle } from "../../contexts/ThemeContext";
 import { color, font } from "../../theme/tokens";
 import useAuth from "../../hooks/useAuth";
+import LockResetIcon from "@mui/icons-material/LockReset";
 
 /**
  * Shared top bar for all three portals.
@@ -105,6 +106,17 @@ const handleLogout = () => {
               </Typography>
             </Box>
             <Divider />
+            <MenuItem
+              onClick={() => {
+                setAnchorEl(null);
+                navigate("/change-password");
+              }}
+            >
+              <ListItemIcon>
+                <LockResetIcon fontSize="small" />
+              </ListItemIcon>
+              Change Password
+            </MenuItem>
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon fontSize="small" />

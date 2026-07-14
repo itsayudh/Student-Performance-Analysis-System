@@ -29,9 +29,11 @@ export default function AddStudentPage() {
       //   ? `${payload.first_name} ${payload.last_name} was added. Temporary password: ${result.temp_password} — share it with the student; they should change it after first login.`
       //   : `${payload.first_name} ${payload.last_name} was added successfully.`;
 
-      const flash = result?.temp_password
-        ? `${payload.first_name} ${payload.last_name} was added. Temporary password (copy exactly, without quotes): "${result.temp_password}"`
-        : `${payload.first_name} ${payload.last_name} was added successfully.`;
+      const flash =
+        result?.temp_password && result?.email_sent === false
+          ? `${result.message} Temporary password (copy exactly, without quotes): "${result.temp_password}"`
+          : result?.message || `${payload.first_name} ${payload.last_name} was added.`;
+          
 
       // Navigate back to the list, carrying the message with us —
       // showing it HERE would be pointless, we're about to leave.

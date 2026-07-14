@@ -102,7 +102,7 @@ export default function AttendanceForm({
     <Box>
       {/* ---- Header selectors ---- */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} md={4}>
           <TextField
             select
             fullWidth
@@ -120,7 +120,7 @@ export default function AttendanceForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} md={4}>
           <TextField
             select
             fullWidth
@@ -138,7 +138,7 @@ export default function AttendanceForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid item xs={12} md={4}>
           <TextField
             fullWidth
             size="small"

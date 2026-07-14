@@ -53,7 +53,7 @@ export default function AdminDashboard() {
     <>
       <PageHeader
         title={`Welcome${user?.full_name ? `, ${user.full_name}` : ""}`}
-        subtitle="Institution overview at a glance"
+        //subtitle="Institution overview at a glance"
       />
 
       <AlertBanner
@@ -71,6 +71,8 @@ export default function AdminDashboard() {
             value={stats?.total_students}
             icon={<GroupsIcon />}
             loading={isLoading}
+            useTicker
+            format={(n) => Math.round(n)}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
@@ -80,6 +82,8 @@ export default function AdminDashboard() {
             icon={<SchoolIcon />}
             color="secondary"
             loading={isLoading}
+            useTicker
+            format={(n) => Math.round(n)}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
@@ -89,30 +93,30 @@ export default function AdminDashboard() {
             icon={<ClassIcon />}
             color="info"
             loading={isLoading}
+            useTicker
+            format={(n) => Math.round(n)}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
             title="Avg GPA"
-            value={
-              stats?.overall_gpa_avg?.toFixed?.(2) ?? stats?.overall_gpa_avg
-            }
+            value={stats?.overall_gpa_avg}
             icon={<GradeIcon />}
             color="success"
             loading={isLoading}
+            useTicker
+            format={(n) => n.toFixed(2)}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
           <StatCard
             title="Attendance"
-            value={
-              stats?.overall_attendance_rate != null
-                ? `${Math.round(stats.overall_attendance_rate)}%`
-                : undefined
-            }
+            value={stats?.overall_attendance_rate}
             icon={<EventAvailableIcon />}
             color="success"
             loading={isLoading}
+            useTicker
+            format={(n) => `${Math.round(n)}%`}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={4} lg={2}>
@@ -121,8 +125,9 @@ export default function AdminDashboard() {
             value={stats?.at_risk_students}
             icon={<WarningAmberIcon />}
             color="error"
-            subtitle="Click to view predictions"
             loading={isLoading}
+            useTicker
+            format={(n) => Math.round(n)}
           />
         </Grid>
       </Grid>
