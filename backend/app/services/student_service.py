@@ -7,6 +7,7 @@ from app.models.student import Student
 from app.models.user import User
 from app.utils.security import hash_password
 import secrets
+from app.utils.email import send_temporary_password_email
 
 def get_students(
     db: Session,
@@ -95,11 +96,29 @@ def create_student(db: Session, data: dict):
     db.commit()
     db.refresh(student)
 
+    # Fire the welcome/temp-password email. Failure here must NOT roll
+    # back the student creation — the account already exists and is
+    # usable; email is a delivery convenience, not a transaction
+    # requirement. We surface success/failure in the response instead
+    # of silently claiming it worked either way.
+    email_sent = send_temporary_password_email(
+        to_email      = data["email"],
+        full_name     = f"{data['first_name']} {data['last_name']}",
+        temp_password = temp_password,
+        role          = "STUDENT",
+    )
+
     return {
         "id": str(student.id),
         "student_code": student.student_code,
-        "message": f"Student created. Temporary password sent to {data['email']}",
-        "temp_password": temp_password   # remove in production — email it instead
+        "message": (
+            f"Student created. Temporary password emailed to {data['email']}."
+            if email_sent else
+            f"Student created, but the welcome email could not be sent. "
+            f"Share the temporary password with the student directly."
+        ),
+        "temp_password": temp_password,
+        "email_sent": email_sent,
     }
 
 

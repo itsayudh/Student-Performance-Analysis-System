@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.student import Student
@@ -10,7 +10,7 @@ from app.utils.security import (
     hash_password, verify_password,
     create_access_token, create_refresh_token, decode_token
 )
-
+from app.utils.email import send_password_reset_email
 
 def login_user(email: str, password: str, db: Session) -> dict:
     user = db.query(User).filter(User.email == email).first()
@@ -74,6 +74,15 @@ def logout_user(token: str, user_id: str, db: Session) -> dict:
 
 
 def refresh_access_token(refresh_token: str, db: Session) -> dict:
+    # Guard against a missing cookie BEFORE decode_token ever sees it —
+    # a None token crashes jose's decoder deep inside (AttributeError:
+    # 'NoneType' has no attribute 'rsplit'), rather than failing
+    # cleanly here. This is the normal case for any visitor who was
+    # never logged in — e.g. landing fresh on a password-reset link —
+    # not an attack or a data problem.
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token provided")
+
     payload = decode_token(refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(status_code=401, detail="Refresh token expired or invalid")
@@ -96,10 +105,11 @@ def forgot_password(email: str, db: Session) -> dict:
     user = db.query(User).filter(User.email == email).first()
     if user:
         reset_token = str(uuid.uuid4())
-        expiry      = datetime.utcnow() + timedelta(hours=1)
+        expiry = datetime.now(timezone.utc) + timedelta(hours=1)
         user.reset_token        = reset_token
         user.reset_token_expiry = expiry
         db.commit()
+        send_password_reset_email(to_email=user.email, reset_token=reset_token)
     return {"message": "If this email exists, a reset link has been sent."}
 
 
@@ -107,7 +117,7 @@ def reset_password(token: str, new_password: str, db: Session) -> dict:
     user = db.query(User).filter(User.reset_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Reset token is invalid or has expired")
-    if user.reset_token_expiry < datetime.utcnow():
+    if user.reset_token_expiry < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Reset token is invalid or has expired")
 
     user.password_hash      = hash_password(new_password)

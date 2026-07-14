@@ -26,6 +26,9 @@ from app.schemas.prediction     import (
     PredictionRecord,
     PredictionListResponse,
 )
+from app.services.attendance_service import get_student_attendance
+from app.services.marks_service import get_student_marks
+from app.models.marks import GPARecord
 
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
@@ -228,3 +231,57 @@ def get_latest_prediction(
         pass_fail           = prediction.pass_fail,
         predicted_at        = prediction.predicted_at,
     )
+
+from app.services.attendance_service import get_student_attendance
+from app.services.marks_service import get_student_marks
+
+
+def get_prediction_autofill(db: Session, student_id: str, subject_id: str = None):
+    """
+    Computes 5 of PredictionInput's 7 fields from real records, reusing
+    the exact same service functions the Attendance/Marks pages already
+    call — no parallel query logic to drift out of sync later.
+
+    study_hours_per_week and subject_difficulty_score are DELIBERATELY
+    omitted: no table stores either value (confirmed during
+    reconnaissance — Student and Subject models have no such columns).
+    They stay manual-entry fields on the frontend form.
+    """
+    attendance = get_student_attendance(db, student_id, subject_id=subject_id)
+    attendance_percentage = attendance["summary"]["overall_percentage"]
+
+    marks = get_student_marks(db, student_id, subject_id=subject_id)
+
+    # Aggregate quiz/assignment averages and the latest midterm ACROSS
+    # every subject in the response (or the single subject, if
+    # subject_id was passed — get_student_marks already filtered).
+    quiz_scores, assignment_scores, midterm_scores = [], [], []
+    for subj in marks["marks"]:
+        for q in subj.get("quiz") or []:
+            if q["max_score"] > 0:
+                quiz_scores.append(q["score"] / q["max_score"] * 100)
+        for a in subj.get("assignment") or []:
+            if a["max_score"] > 0:
+                assignment_scores.append(a["score"] / a["max_score"] * 100)
+        mid = subj.get("midterm")
+        if mid and mid["max_score"] > 0:
+            midterm_scores.append(mid["score"] / mid["max_score"] * 100)
+
+    def avg(lst):
+        return round(sum(lst) / len(lst), 2) if lst else None
+
+    gpa_record = db.query(GPARecord).filter(
+        GPARecord.student_id == student_id
+    ).order_by(GPARecord.calculated_at.desc()).first()
+
+    return {
+        "attendance_percentage": round(attendance_percentage, 2) if attendance_percentage is not None else None,
+        "quiz_score_avg":        avg(quiz_scores),
+        "assignment_score_avg":  avg(assignment_scores),
+        "midterm_score":         avg(midterm_scores),
+        "historical_gpa":        gpa_record.cgpa if gpa_record else None,
+        # Explicitly signaling absence rather than omitting the keys —
+        # the frontend checks these to show "no data source" helper text.
+        "study_hours_per_week":     None,
+        "subject_difficulty_score": None,
+    }

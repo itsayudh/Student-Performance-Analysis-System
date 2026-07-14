@@ -24,8 +24,13 @@ from app.api.v1 import reports
 from app.api.v1 import imports
 from app.api.v1 import classes
 from app.api.v1 import subjects
+from dotenv import load_dotenv
 
 
+load_dotenv()
+import os
+print(f"[STARTUP] SMTP_USER loaded as: {os.getenv('SMTP_USER', '(not set)')}")
+print(f"[STARTUP] SMTP_HOST loaded as: {os.getenv('SMTP_HOST', '(not set)')}")
 # ── FastAPI app instance ───────────────────────────────────────────────────────
 app = FastAPI(
     title       = "Student Performance Analysis System (SPAS)",
