@@ -6,6 +6,10 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import CircularProgress from "@mui/material/CircularProgress";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import {
   Link as RouterLink,
   useSearchParams,
@@ -17,10 +21,6 @@ import { required, validateForm } from "../../utils/validators";
 import { parseApiError } from "../../utils/apiError";
 
 export default function ResetPasswordPage() {
-  // The reset link in the email looks like:
-  //   http://localhost:5173/reset-password?token=abc123...
-  // useSearchParams reads that query string — this is how the secret
-  // travels from the email into this page.
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
   const navigate = useNavigate();
@@ -30,6 +30,23 @@ export default function ResetPasswordPage() {
   const [alert, setAlert] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Independent toggle per field — MUI v9 uses slotProps.input.endAdornment,
+  // not the old InputProps prop (silently ignored in this version).
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const eyeSlotProps = (show, setShow) => ({
+    input: {
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton size="small" onClick={() => setShow((s) => !s)} edge="end">
+            {show ? <VisibilityOff /> : <Visibility />}
+          </IconButton>
+        </InputAdornment>
+      ),
+    },
+  });
 
   const handleChange = (field) => (e) => {
     setValues((prev) => ({ ...prev, [field]: e.target.value }));
@@ -43,7 +60,6 @@ export default function ResetPasswordPage() {
       password: [required("New password")],
       confirm: [required("Confirm password")],
     });
-    // Cross-field check: both entered but different
     if (!errs.password && !errs.confirm && values.password !== values.confirm) {
       errs.confirm = "Passwords do not match";
     }
@@ -70,8 +86,6 @@ export default function ResetPasswordPage() {
     }
   };
 
-  // No token in the URL → the page is useless; say so instead of letting
-  // the submit fail with a confusing backend error.
   if (!token) {
     return (
       <Box>
@@ -81,12 +95,7 @@ export default function ResetPasswordPage() {
           message="This link is missing its reset token. Please use the link from your email, or request a new one."
         />
         <Box sx={{ textAlign: "center", mt: 2 }}>
-          <Link
-            component={RouterLink}
-            to="/forgot-password"
-            variant="body2"
-            underline="hover"
-          >
+          <Link component={RouterLink} to="/forgot-password" variant="body2" underline="hover">
             Request a new reset link
           </Link>
         </Box>
@@ -115,7 +124,7 @@ export default function ResetPasswordPage() {
         <>
           <TextField
             label="New Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             fullWidth
             size="small"
             sx={{ mb: 2 }}
@@ -123,11 +132,12 @@ export default function ResetPasswordPage() {
             onChange={handleChange("password")}
             error={!!fieldErrors.password}
             helperText={fieldErrors.password || " "}
+            slotProps={eyeSlotProps(showPassword, setShowPassword)}
             autoFocus
           />
           <TextField
             label="Confirm Password"
-            type="password"
+            type={showConfirm ? "text" : "password"}
             fullWidth
             size="small"
             sx={{ mb: 2 }}
@@ -136,6 +146,7 @@ export default function ResetPasswordPage() {
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             error={!!fieldErrors.confirm}
             helperText={fieldErrors.confirm || " "}
+            slotProps={eyeSlotProps(showConfirm, setShowConfirm)}
           />
 
           <Button
@@ -151,12 +162,7 @@ export default function ResetPasswordPage() {
       )}
 
       <Box sx={{ textAlign: "center", mt: 2 }}>
-        <Link
-          component={RouterLink}
-          to="/login"
-          variant="body2"
-          underline="hover"
-        >
+        <Link component={RouterLink} to="/login" variant="body2" underline="hover">
           Back to sign in
         </Link>
       </Box>

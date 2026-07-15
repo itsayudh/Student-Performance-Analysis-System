@@ -4,22 +4,45 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
+import InputAdornment from "@mui/material/InputAdornment";
+import IconButton from "@mui/material/IconButton";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { Panel, PageHeader } from "../../components/gridline";
 import { changePassword } from "../../services/authService";
 
-// Shared across all three portals — reached via the Navbar avatar
-// menu, not a sidebar link, since it's an account-level action rather
-// than a portal-specific feature. One route (/change-password),
-// registered outside any RoleRoute block in AppRoutes.jsx: any
-// authenticated user can reach it, and the backend enforces "self
-// only" by reading the user from the auth token rather than the body.
+// Shared across all three portals — reached via the Navbar avatar menu.
+// Each of the three password fields gets its OWN visibility toggle.
+//
+// MUI v9 note: TextField adornments go through `slotProps={{ input: {
+// endAdornment } }}` now, NOT the old `InputProps={{ endAdornment }}` —
+// the old prop is silently ignored in this version (no error, no
+// warning, the icon just never renders). This bit us across every
+// password field in the app until confirmed via package.json.
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
-  const [banner, setBanner] = useState(null); // { severity, text }
+  const [banner, setBanner] = useState(null);
+
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Returns a ready-to-spread slotProps object for a given toggle pair.
+  const eyeSlotProps = (show, setShow) => ({
+    input: {
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton size="small" onClick={() => setShow((s) => !s)} edge="end">
+            {show ? <VisibilityOff /> : <Visibility />}
+          </IconButton>
+        </InputAdornment>
+      ),
+    },
+  });
 
   const validate = () => {
     const errs = {};
@@ -47,9 +70,6 @@ export default function ChangePasswordPage() {
         setErrors({});
       })
       .catch((err) => {
-        // Backend's own message for the wrong-current-password case is
-        // already clear ("Current password is incorrect") — pass it
-        // through rather than replacing it with a generic string.
         const detail = err.response?.data?.detail;
         setBanner({
           severity: "error",
@@ -73,34 +93,37 @@ export default function ChangePasswordPage() {
         <TextField
           fullWidth
           size="small"
-          type="password"
+          type={showCurrent ? "text" : "password"}
           label="Current password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           error={Boolean(errors.currentPassword)}
           helperText={errors.currentPassword || " "}
+          slotProps={eyeSlotProps(showCurrent, setShowCurrent)}
           sx={{ mb: 1.5 }}
         />
         <TextField
           fullWidth
           size="small"
-          type="password"
+          type={showNew ? "text" : "password"}
           label="New password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           error={Boolean(errors.newPassword)}
           helperText={errors.newPassword || "At least 8 characters"}
+          slotProps={eyeSlotProps(showNew, setShowNew)}
           sx={{ mb: 1.5 }}
         />
         <TextField
           fullWidth
           size="small"
-          type="password"
+          type={showConfirm ? "text" : "password"}
           label="Confirm new password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           error={Boolean(errors.confirmPassword)}
           helperText={errors.confirmPassword || " "}
+          slotProps={eyeSlotProps(showConfirm, setShowConfirm)}
           sx={{ mb: 2 }}
         />
 

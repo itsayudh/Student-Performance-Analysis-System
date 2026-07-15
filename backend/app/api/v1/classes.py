@@ -5,9 +5,13 @@ from app.database.connection import get_db
 from app.api.deps import require_role
 from app.services.class_service import (
     get_classes, get_class_by_id, get_class_students,
-    create_class, update_class, delete_class,get_class_subjects, assign_subject_to_class
+    create_class, update_class, delete_class, get_class_subjects, assign_subject_to_class,
+    enroll_students, withdraw_students, get_unenrolled_students
 )
 from app.schemas.class_ import ClassCreate, ClassUpdate, ClassSubjectAssign
+from app.schemas.enrollment import EnrollmentCreate, EnrollmentWithdraw
+
+
 
 router = APIRouter(prefix="/classes", tags=["Classes"])
 
@@ -96,3 +100,32 @@ def class_subjects(
     current_user = Depends(require_role("ADMIN", "TEACHER"))
 ):
     return get_class_subjects(db, class_id)
+
+@router.post("/{class_id}/students")
+def enroll_class_students(
+    class_id: str,
+    payload: EnrollmentCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return enroll_students(db, class_id, payload.student_ids)
+
+
+@router.delete("/{class_id}/students")
+def withdraw_class_students(
+    class_id: str,
+    payload: EnrollmentWithdraw,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return withdraw_students(db, class_id, payload.student_ids)
+
+
+@router.get("/{class_id}/available-students")
+def unenrolled_students(
+    class_id: str,
+    search: str = Query(None),
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return get_unenrolled_students(db, class_id, search)

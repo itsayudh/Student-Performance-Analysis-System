@@ -10,6 +10,7 @@ from sqlalchemy import or_
 from fastapi import HTTPException
 
 from app.models.subject import Subject
+import uuid
 
 
 def get_subjects(db: Session, page: int = 1, page_size: int = 25,
@@ -69,3 +70,55 @@ def get_subject_by_id(db: Session, subject_id: str):
         "department": subject.department,
         "is_active": subject.is_active,
     }
+
+import uuid
+
+
+def create_subject(db: Session, data: dict):
+    existing = db.query(Subject).filter(Subject.subject_code == data["subject_code"]).first()
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Subject code '{data['subject_code']}' already exists"
+        )
+
+    subject = Subject(
+        id           = uuid.uuid4(),
+        subject_name = data["subject_name"],
+        subject_code = data["subject_code"],
+        department   = data["department"],
+        credit_hours = data.get("credit_hours", 3),
+        is_active    = True,
+    )
+    db.add(subject)
+    db.commit()
+
+    return get_subject_by_id(db, str(subject.id))
+
+
+def update_subject(db: Session, subject_id: str, data: dict):
+    subject = db.query(Subject).filter(Subject.id == subject_id).first()
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+
+    # data arrives pre-filtered by exclude_unset in the router —
+    # same partial-update contract as update_class/update_student.
+    for field, value in data.items():
+        setattr(subject, field, value)
+
+    db.commit()
+    return get_subject_by_id(db, subject_id)
+
+
+def delete_subject(db: Session, subject_id: str):
+    subject = db.query(Subject).filter(Subject.id == subject_id).first()
+    if not subject:
+        raise HTTPException(status_code=404, detail="Subject not found")
+
+    # Soft delete — same reasoning as class/student/teacher: existing
+    # ClassSubject/Attendance/Marks rows keep pointing at a real subject;
+    # it just stops appearing in is_active=True listings and pickers.
+    subject.is_active = False
+    db.commit()
+
+    return {"message": f"Subject '{subject.subject_code}' deactivated"}

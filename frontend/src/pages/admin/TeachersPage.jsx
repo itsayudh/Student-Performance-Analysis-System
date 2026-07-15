@@ -1,12 +1,12 @@
 // src/pages/admin/TeachersPage.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PageHeader from "../../components/common/PageHeader";
 import DataTable from "../../components/common/DataTable";
@@ -20,8 +20,7 @@ export default function TeachersPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // The generic hook bound directly to the teachers endpoint —
-  // no useTeachers.js wrapper needed. Same machine, different fuel.
+  // Generic paginated-list hook bound directly to the teachers endpoint.
   const {
     items,
     total,
@@ -39,6 +38,7 @@ export default function TeachersPage() {
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Flash message from AddTeacherPage (carries the temp password).
   useEffect(() => {
     if (location.state?.flash) {
       setAlert({ severity: "success", messages: location.state.flash });
@@ -54,6 +54,7 @@ export default function TeachersPage() {
         severity: "success",
         messages: `${confirmTarget.first_name} ${confirmTarget.last_name} was deactivated.`,
       });
+      // Last row on a later page? Step back instead of refetching empty.
       if (items.length === 1 && page > 1) {
         setPage(page - 1);
       } else {
@@ -91,18 +92,31 @@ export default function TeachersPage() {
       label: "",
       align: "right",
       render: (row) => (
-        <Tooltip title="Delete">
-          <IconButton
-            size="small"
-            color="error"
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirmTarget(row);
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <>
+          <Tooltip title="Edit">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation(); // don't trigger the row's navigate
+                navigate(`/admin/teachers/${row.id}`, { state: { autoEdit: true } });
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmTarget(row);
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </>
       ),
     },
   ];
@@ -111,7 +125,7 @@ export default function TeachersPage() {
     <>
       <PageHeader
         title="Teachers"
-        //subtitle="Manage all teacher records"
+        subtitle="Manage all teacher records"
         
         action={
           <Button
@@ -124,6 +138,7 @@ export default function TeachersPage() {
         }
       />
 
+      {/* Action feedback (delete/add-flash) */}
       <AlertBanner
         severity={alert?.severity}
         title={alert?.title}
@@ -131,6 +146,8 @@ export default function TeachersPage() {
         show={!!alert}
         onClose={() => setAlert(null)}
       />
+
+      {/* List-fetch failure (backend down, permission denied) */}
       <AlertBanner
         severity="error"
         title={error?.title}
