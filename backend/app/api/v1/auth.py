@@ -52,6 +52,58 @@ def login(payload: dict, db: Session = Depends(get_db), response: Response = Non
     return result
 
 
+
+
+
+
+# ######################  form data dependency  ayudh new code ######################
+# from fastapi import APIRouter, Depends, Response, Request, HTTPException, status
+# from fastapi.security import OAuth2PasswordRequestForm
+# from sqlalchemy.orm import Session
+# from app.database.connection import get_db
+# from app.services.auth_service import (
+#     login_user, logout_user, refresh_access_token,
+#     forgot_password, reset_password, change_password
+# )
+# from app.api.deps import get_current_user
+
+# router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+# @router.post("/login")
+# def login(
+#     # Changed from payload: dict to Form data dependency
+#     form_data: OAuth2PasswordRequestForm = Depends(), 
+#     db: Session = Depends(get_db), 
+#     response: Response = None
+# ):
+#     # OAuth2PasswordRequestForm maps the first input field to .username
+#     email    = form_data.username  
+#     password = form_data.password
+#     result   = login_user(email, password, db)
+
+#     response.set_cookie(
+#         key      = "__Secure-refresh-token",
+#         value    = result["refresh_token"],
+#         httponly = True,
+#         secure   = True,
+#         samesite = "strict",
+#         max_age  = 7 * 24 * 60 * 60
+#     )
+
+#     del result["refresh_token"]
+    
+#     # Swagger expects a JSON response containing "access_token" and "token_type"
+#     # Ensure your login_user service returns "access_token" as a key!
+#     return result
+
+
+
+
+
+
+
+
 @router.post("/logout")
 def logout(
     request:      Request,

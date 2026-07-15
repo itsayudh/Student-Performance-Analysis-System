@@ -1,6 +1,6 @@
 // src/pages/admin/StudentDetailPage.jsx
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -32,11 +32,14 @@ export default function StudentDetailPage() {
   // this is how the row click on StudentsPage hands us WHICH student.
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [student, setStudent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState(null);
-  const [editing, setEditing] = useState(false);
+  // If we arrived via the list page's Edit icon, open straight into
+  // edit mode instead of making the admin click Edit again.
+  const [editing, setEditing] = useState(!!location.state?.autoEdit);
   const [saving, setSaving] = useState(false);
 
   // Fetch the student whenever the id changes
@@ -83,8 +86,12 @@ export default function StudentDetailPage() {
         if (payload[k] !== undefined) body[k] = payload[k];
       }
 
-      const updated = await updateStudent(id, body);
-      setStudent(updated);
+      await updateStudent(id, body);
+      // The PUT response is only { id, message } — not the full student
+      // (unlike /classes, whose update returns the whole object). Refetch
+      // so the read view shows real data, not the message envelope.
+      const fresh = await getStudent(id);
+      setStudent(fresh);
       setEditing(false);
       setAlert({ severity: "success", messages: "Student updated." });
     } catch (err) {
@@ -121,11 +128,7 @@ export default function StudentDetailPage() {
       <PageHeader
         title={fullName}
         subtitle={`Student Code: ${student.student_code}`}
-        breadcrumbs={[
-          { label: "Dashboard", to: "/admin/dashboard" },
-          { label: "Students", to: "/admin/students" },
-          { label: fullName },
-        ]}
+        
         action={
           !editing && (
             <Button
@@ -154,7 +157,16 @@ export default function StudentDetailPage() {
             initialValues={student}
             loading={saving}
             onSubmit={handleUpdate}
-            onCancel={() => setEditing(false)}
+            onCancel={() => {
+              // Arrived via the list's pencil icon → cancel means "abort
+              // the errand entirely," back to the list. Arrived via
+              // row-click + Edit button → cancel just returns to reading.
+              if (location.state?.autoEdit) {
+                navigate("/admin/students");
+              } else {
+                setEditing(false);
+              }
+            }}
           />
         ) : (
           <Grid container spacing={2}>

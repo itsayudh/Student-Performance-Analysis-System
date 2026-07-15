@@ -15,6 +15,8 @@ import useAuth from "../../hooks/useAuth";
 import AlertBanner from "../../components/common/AlertBanner";
 import { required, isEmail, validateForm } from "../../utils/validators";
 
+
+
 export default function LoginPage() {
   const { loginUser, isSubmitting, error, clearError } = useAuth();
   const [values, setValues] = useState({ email: "", password: "" });
@@ -88,18 +90,20 @@ export default function LoginPage() {
         onKeyDown={handleKeyDown}
         error={!!fieldErrors.password}
         helperText={fieldErrors.password || " "}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                size="small"
-                onClick={() => setShowPassword((s) => !s)}
-                edge="end"
-              >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setShowPassword((s) => !s)}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
         }}
       />
 

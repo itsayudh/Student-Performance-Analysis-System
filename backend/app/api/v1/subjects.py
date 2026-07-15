@@ -3,7 +3,11 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
 from app.api.deps import require_role
-from app.services.subject_service import get_subjects, get_subject_by_id
+from app.services.subject_service import (
+    get_subjects, get_subject_by_id,
+    create_subject, update_subject, delete_subject
+)
+from app.schemas.subject import SubjectCreate, SubjectUpdate
 
 router = APIRouter(prefix="/subjects", tags=["Subjects"])
 
@@ -16,8 +20,6 @@ def list_subjects(
     department: str = Query(None),
     is_active: bool = Query(None),
     db: Session = Depends(get_db),
-    # STUDENT included: students legitimately see subject names/codes
-    # (their own marks and attendance pages reference subjects).
     current_user = Depends(require_role("ADMIN", "TEACHER", "STUDENT"))
 ):
     return get_subjects(
@@ -37,3 +39,31 @@ def get_subject(
     current_user = Depends(require_role("ADMIN", "TEACHER", "STUDENT"))
 ):
     return get_subject_by_id(db, subject_id)
+
+
+@router.post("")
+def add_subject(
+    payload: SubjectCreate,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return create_subject(db, payload.dict())
+
+
+@router.put("/{subject_id}")
+def edit_subject(
+    subject_id: str,
+    payload: SubjectUpdate,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return update_subject(db, subject_id, payload.dict(exclude_unset=True))
+
+
+@router.delete("/{subject_id}")
+def remove_subject(
+    subject_id: str,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return delete_subject(db, subject_id)

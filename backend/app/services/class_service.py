@@ -22,6 +22,7 @@ from app.models.teacher import Teacher
 
 from app.models.enrollment import Enrollment
 from app.models.student import Student
+from app.models.enrollment import Enrollment
 
 
 
@@ -304,5 +305,144 @@ def get_teacher_classes(db: Session, teacher_id: str):
                 "is_homeroom": c.id in homeroom_ids,
             }
             for c in merged
+        ],
+    }
+
+def enroll_students(db: Session, class_id: str, student_ids: list):
+    """
+    Bulk-enrolls students into a class. Creates one Enrollment row per
+    student. Idempotent-friendly: students already ACTIVE-enrolled are
+    skipped (not an error) so re-submitting a roster is always safe.
+    """
+    class_obj = db.query(Class).filter(Class.id == class_id).first()
+    if not class_obj:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    if not student_ids:
+        raise HTTPException(status_code=400, detail="student_ids cannot be empty")
+
+    students = db.query(Student).filter(Student.id.in_(student_ids)).all()
+    found_ids = {str(s.id) for s in students}
+    missing = [sid for sid in student_ids if sid not in found_ids]
+    if missing:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Student id(s) not found: {', '.join(missing)}"
+        )
+
+    existing_rows = (
+        db.query(Enrollment)
+        .filter(Enrollment.class_id == class_id, Enrollment.student_id.in_(student_ids))
+        .all()
+    )
+    existing_by_str = {str(row.student_id): row for row in existing_rows}
+
+    enrolled, reactivated, already_active = [], [], []
+
+    for sid in student_ids:
+        row = existing_by_str.get(sid)
+        if row is None:
+            db.add(Enrollment(
+                id         = uuid.uuid4(),
+                student_id = sid,
+                class_id   = class_id,
+                status     = "ACTIVE",
+            ))
+            enrolled.append(sid)
+        elif row.status != "ACTIVE":
+            row.status = "ACTIVE"
+            reactivated.append(sid)
+        else:
+            already_active.append(sid)
+
+    db.commit()
+
+    return {
+        "class_id": class_id,
+        "enrolled": enrolled,
+        "reactivated": reactivated,
+        "already_active": already_active,
+        "message": f"{len(enrolled) + len(reactivated)} student(s) enrolled in {class_obj.class_code}",
+    }
+
+
+def withdraw_students(db: Session, class_id: str, student_ids: list):
+    """
+    Withdraws students from a class — sets Enrollment.status to
+    WITHDRAWN rather than deleting the row. Soft, same reasoning as
+    every other delete in this codebase: attendance/marks history for
+    this student in this class must keep pointing at a real enrollment.
+    """
+    class_obj = db.query(Class).filter(Class.id == class_id).first()
+    if not class_obj:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    rows = (
+        db.query(Enrollment)
+        .filter(Enrollment.class_id == class_id, Enrollment.student_id.in_(student_ids))
+        .all()
+    )
+    found_ids = {str(r.student_id) for r in rows}
+    missing = [sid for sid in student_ids if sid not in found_ids]
+    if missing:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No active enrollment found for student id(s): {', '.join(missing)}"
+        )
+
+    for row in rows:
+        row.status = "WITHDRAWN"
+
+    db.commit()
+    return {
+        "class_id": class_id,
+        "withdrawn": [str(r.student_id) for r in rows],
+        "message": f"{len(rows)} student(s) withdrawn from {class_obj.class_code}",
+    }
+
+
+def get_unenrolled_students(db: Session, class_id: str, search: str = None):
+    """
+    Students NOT currently ACTIVE-enrolled in this class — feeds the
+    enrollment panel's picker (you don't want to show already-enrolled
+    students in a list meant for ADDING new ones).
+    """
+    class_obj = db.query(Class).filter(Class.id == class_id).first()
+    if not class_obj:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    enrolled_ids = (
+        db.query(Enrollment.student_id)
+        .filter(Enrollment.class_id == class_id, Enrollment.status == "ACTIVE")
+        .subquery()
+    )
+
+    query = db.query(Student).filter(
+        Student.is_active == True,
+        ~Student.id.in_(enrolled_ids),
+    )
+    if search:
+        query = query.filter(
+            or_(
+                Student.first_name.ilike(f"%{search}%"),
+                Student.last_name.ilike(f"%{search}%"),
+                Student.student_code.ilike(f"%{search}%"),
+            )
+        )
+
+    students = query.order_by(Student.student_code.asc()).limit(100).all()
+
+    return {
+        "class_id": class_id,
+        "total": len(students),
+        "items": [
+            {
+                "id": str(s.id),
+                "student_code": s.student_code,
+                "first_name": s.first_name,
+                "last_name": s.last_name,
+                "program": s.program,
+            }
+            for s in students
         ],
     }

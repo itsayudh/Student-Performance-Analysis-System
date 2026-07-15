@@ -14,6 +14,7 @@ import ConfirmDialog from "../../components/common/ConfirmDialog";
 import useStudents from "../../hooks/useStudents";
 import { deleteStudent } from "../../services/studentService";
 import { parseApiError } from "../../utils/apiError";
+import EditIcon from "@mui/icons-material/Edit";
 
 export default function StudentsPage() {
   const navigate = useNavigate();
@@ -94,18 +95,31 @@ export default function StudentsPage() {
       label: "",
       align: "right",
       render: (row) => (
-        <Tooltip title="Delete">
-          <IconButton
-            size="small"
-            color="error"
-            onClick={(e) => {
-              e.stopPropagation(); // don't trigger the row's navigate
-              setConfirmTarget(row);
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <>
+          <Tooltip title="Edit">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/admin/students/${row.id}`, { state: { autoEdit: true } });
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmTarget(row);
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </>
       ),
     },
   ];

@@ -64,6 +64,25 @@ export default function ClassesPage() {
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
 
+  // ── enrollment dialog ──
+  const [enrollTarget, setEnrollTarget] = useState(null); // the class row
+  const [roster, setRoster] = useState([]);               // currently enrolled
+  const [available, setAvailable] = useState([]);         // not yet enrolled
+  const [availableSearch, setAvailableSearch] = useState("");
+  const [selectedToAdd, setSelectedToAdd] = useState([]);  // student ids checked in "available"
+  const [enrolling, setEnrolling] = useState(false);
+  const [withdrawingId, setWithdrawingId] = useState(null); // per-row spinner target
+  const [enrollError, setEnrollError] = useState(null);
+
+  // ── Manage Subjects mini-dialog (create + edit + deactivate) ──
+  const [manageSubjectsOpen, setManageSubjectsOpen] = useState(false);
+  const EMPTY_SUBJECT = { subject_name: "", subject_code: "", department: "", credit_hours: "3" };
+  const [subjectForm, setSubjectForm] = useState(EMPTY_SUBJECT);
+  const [editingSubjectId, setEditingSubjectId] = useState(null); // null = creating
+  const [savingSubject, setSavingSubject] = useState(false);
+  const [deactivatingSubjectId, setDeactivatingSubjectId] = useState(null);
+  const [subjectError, setSubjectError] = useState(null);
+
   const fetchClasses = useCallback(() => {
     setLoading(true);
     api
@@ -196,6 +215,150 @@ export default function ClassesPage() {
       })
       .finally(() => setAssigning(false));
   };
+  // ── new-subject handler ──
+  // Lives inside the assignment dialog so an admin never has to leave
+  // the "assign teacher to class" flow just because the subject they
+  // need doesn't exist in the catalog yet.
+  // ── subject management handlers ──
+  const openSubjectCreate = () => {
+    setEditingSubjectId(null);
+    setSubjectForm(EMPTY_SUBJECT);
+    setSubjectError(null);
+  };
+
+  const openSubjectEdit = (s) => {
+    setEditingSubjectId(s.id);
+    setSubjectForm({
+      subject_name: s.subject_name,
+      subject_code: s.subject_code,
+      department: s.department,
+      credit_hours: String(s.credit_hours),
+    });
+    setSubjectError(null);
+  };
+
+  const refreshSubjects = () =>
+    api.get("/subjects", { params: { page_size: 100, is_active: true } })
+      .then((res) => setSubjects(res.data.items));
+
+  const handleSaveSubject = () => {
+    setSavingSubject(true);
+    setSubjectError(null);
+
+    // subject_code is only sent on CREATE — SubjectUpdate deliberately
+    // excludes it, same reasoning as class_code/student_code/employee_code:
+    // it's the identifier other tables reference by meaning.
+    const request = editingSubjectId
+      ? api.put(`/subjects/${editingSubjectId}`, {
+          subject_name: subjectForm.subject_name,
+          department: subjectForm.department,
+          credit_hours: Number(subjectForm.credit_hours) || 3,
+        })
+      : api.post("/subjects", {
+          subject_name: subjectForm.subject_name,
+          subject_code: subjectForm.subject_code,
+          department: subjectForm.department,
+          credit_hours: Number(subjectForm.credit_hours) || 3,
+        });
+
+    request
+      .then((res) => refreshSubjects().then(() => {
+        // Newly created subjects are immediately usable in the
+        // assignment dropdown behind this dialog.
+        if (!editingSubjectId) setAssignSubjectId(res.data.id);
+        setEditingSubjectId(null);
+        setSubjectForm(EMPTY_SUBJECT);
+      }))
+      .catch((err) => {
+        const detail = err.response?.data?.detail;
+        setSubjectError(
+          typeof detail === "string" ? detail
+          : Array.isArray(detail) ? detail.map((d) => d.msg).join("; ")
+          : "Could not save subject."
+        );
+      })
+      .finally(() => setSavingSubject(false));
+  };
+
+  const handleDeactivateSubject = (subjectId) => {
+    setDeactivatingSubjectId(subjectId);
+    setSubjectError(null);
+
+    api
+      .delete(`/subjects/${subjectId}`)
+      .then(() => refreshSubjects())
+      .catch(() => setSubjectError("Could not deactivate that subject — it may be in use."))
+      .finally(() => setDeactivatingSubjectId(null));
+  };
+
+
+  // ── enrollment handlers ──
+  const openEnroll = (row) => {
+    setEnrollTarget(row);
+    setSelectedToAdd([]);
+    setAvailableSearch("");
+    setEnrollError(null);
+    api.get(`/classes/${row.id}/students`).then((res) => setRoster(res.data.items));
+    api.get(`/classes/${row.id}/available-students`).then((res) => setAvailable(res.data.items));
+  };
+
+  // Re-search the "available" side as the admin types — same debounce-free
+  // approach as the assignment dialog (list is capped at 100 server-side,
+  // so it's cheap enough to just refetch on each keystroke's blur/enter
+  // rather than adding a timer for a dialog this small).
+  const searchAvailable = (text) => {
+    setAvailableSearch(text);
+    api
+      .get(`/classes/${enrollTarget.id}/available-students`, { params: { search: text || undefined } })
+      .then((res) => setAvailable(res.data.items));
+  };
+
+  const toggleSelect = (studentId) => {
+    setSelectedToAdd((prev) =>
+      prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
+    );
+  };
+
+  const refreshEnrollDialog = () => {
+    return Promise.all([
+      api.get(`/classes/${enrollTarget.id}/students`),
+      api.get(`/classes/${enrollTarget.id}/available-students`, {
+        params: { search: availableSearch || undefined },
+      }),
+    ]).then(([rosterRes, availRes]) => {
+      setRoster(rosterRes.data.items);
+      setAvailable(availRes.data.items);
+    });
+  };
+
+  const handleEnroll = () => {
+    if (selectedToAdd.length === 0) return;
+    setEnrolling(true);
+    setEnrollError(null);
+
+    api
+      .post(`/classes/${enrollTarget.id}/students`, { student_ids: selectedToAdd })
+      .then(() => {
+        setSelectedToAdd([]);
+        return refreshEnrollDialog();
+      })
+      .catch(() => setEnrollError("Could not enroll the selected students."))
+      .finally(() => setEnrolling(false));
+  };
+
+  const handleWithdraw = (studentId) => {
+    setWithdrawingId(studentId);
+    setEnrollError(null);
+
+    api
+      // DELETE with a body — axios needs it under `data`, not as a
+      // second positional arg like post/put.
+      .delete(`/classes/${enrollTarget.id}/students`, { data: { student_ids: [studentId] } })
+      .then(() => refreshEnrollDialog())
+      .catch(() => setEnrollError("Could not withdraw that student."))
+      .finally(() => setWithdrawingId(null));
+  };
+
 
   // ── table definition ──
   // stopPropagation on buttons: not strictly needed (no onRowClick),
@@ -225,6 +388,9 @@ export default function ClassesPage() {
           </Button>
           <Button size="small" onClick={(e) => { e.stopPropagation(); openAssignments(row); }}>
             Subjects
+          </Button>
+          <Button size="small" onClick={(e) => { e.stopPropagation(); openEnroll(row); }}>
+            Students
           </Button>
           {row.is_active && (
             <Button size="small" color="error"
@@ -357,13 +523,21 @@ export default function ClassesPage() {
           {assignError && <Alert severity="warning" sx={{ mt: 2 }}>{assignError}</Alert>}
 
           <Grid container spacing={1.5} sx={{ mt: 1 }}>
-            <Grid item xs={5}>
+            <Grid item xs={4}>
               <TextField select fullWidth size="small" label="Subject" value={assignSubjectId}
                 onChange={(e) => setAssignSubjectId(e.target.value)}>
                 {subjects.map((s) => (
                   <MenuItem key={s.id} value={s.id}>{s.subject_code}</MenuItem>
                 ))}
               </TextField>
+            </Grid>
+            <Grid item xs={1} sx={{ display: "flex", alignItems: "flex-start" }}>
+              <Button
+                size="small" variant="outlined" sx={{ minWidth: 0, px: 1 }}
+                onClick={() => { openSubjectCreate(); setManageSubjectsOpen(true); }}
+              >
+                Manage Subjects
+              </Button>
             </Grid>
             <Grid item xs={5}>
               <TextField select fullWidth size="small" label="Teacher" value={assignTeacherId}
@@ -385,6 +559,217 @@ export default function ClassesPage() {
           <Button onClick={() => setAssignTarget(null)} color="inherit">Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* ── Enrollment dialog ── */}
+      <Dialog open={!!enrollTarget} onClose={() => setEnrollTarget(null)} maxWidth="md" fullWidth>
+        <DialogTitle>Students — {enrollTarget?.class_code}</DialogTitle>
+        <DialogContent>
+          {enrollError && <Alert severity="warning" sx={{ mb: 2 }}>{enrollError}</Alert>}
+
+          <Grid container spacing={2}>
+            {/* Left: currently enrolled roster */}
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Enrolled ({roster.length})
+              </Typography>
+              <Box sx={{ maxHeight: 320, overflowY: "auto", border: "1px solid #E5E7EB", borderRadius: 1 }}>
+                {roster.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                    No students enrolled yet.
+                  </Typography>
+                ) : (
+                  roster.map((s) => (
+                    <Box
+                      key={s.id}
+                      sx={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        px: 1.5, py: 1, borderBottom: "1px solid #F0F1F3",
+                      }}
+                    >
+                      <Typography variant="body2">
+                        {s.first_name} {s.last_name} ({s.student_code})
+                      </Typography>
+                      <Button
+                        size="small" color="error"
+                        disabled={withdrawingId === s.id}
+                        onClick={() => handleWithdraw(s.id)}
+                      >
+                        {withdrawingId === s.id ? "..." : "Remove"}
+                      </Button>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </Grid>
+
+            {/* Right: available students to add */}
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Available ({available.length})
+              </Typography>
+              <TextField
+                fullWidth size="small" placeholder="Search by name or code..."
+                value={availableSearch}
+                onChange={(e) => searchAvailable(e.target.value)}
+                sx={{ mb: 1 }}
+              />
+              <Box sx={{ maxHeight: 260, overflowY: "auto", border: "1px solid #E5E7EB", borderRadius: 1 }}>
+                {available.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                    No unenrolled students match.
+                  </Typography>
+                ) : (
+                  available.map((s) => (
+                    <Box
+                      key={s.id}
+                      onClick={() => toggleSelect(s.id)}
+                      sx={{
+                        display: "flex", alignItems: "center", gap: 1,
+                        px: 1.5, py: 1, borderBottom: "1px solid #F0F1F3",
+                        cursor: "pointer",
+                        bgcolor: selectedToAdd.includes(s.id) ? "action.selected" : "transparent",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedToAdd.includes(s.id)}
+                        onChange={() => toggleSelect(s.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <Typography variant="body2">
+                        {s.first_name} {s.last_name} ({s.student_code})
+                      </Typography>
+                    </Box>
+                  ))
+                )}
+              </Box>
+              <Button
+                fullWidth variant="contained" sx={{ mt: 1 }}
+                disabled={enrolling || selectedToAdd.length === 0}
+                onClick={handleEnroll}
+              >
+                {enrolling ? "Enrolling..." : `Enroll ${selectedToAdd.length || ""} Selected`}
+              </Button>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setEnrollTarget(null)} color="inherit">Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Manage Subjects mini-dialog (nested inside the assignment flow) ── */}
+      <Dialog open={manageSubjectsOpen} onClose={savingSubject ? undefined : () => setManageSubjectsOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Manage Subjects</DialogTitle>
+        <DialogContent>
+          {subjectError && <Alert severity="error" sx={{ mb: 2 }}>{subjectError}</Alert>}
+
+          {/* Existing subjects — each editable or deactivatable inline */}
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Existing Subjects
+          </Typography>
+          <Box sx={{ maxHeight: 220, overflowY: "auto", border: "1px solid #E5E7EB", borderRadius: 1, mb: 2 }}>
+            {subjects.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                No subjects yet — create the first one below.
+              </Typography>
+            ) : (
+              subjects.map((s) => (
+                <Box
+                  key={s.id}
+                  sx={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    px: 1.5, py: 1, borderBottom: "1px solid #F0F1F3",
+                    bgcolor: editingSubjectId === s.id ? "action.selected" : "transparent",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2">
+                      {s.subject_name} ({s.subject_code})
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {s.department} · {s.credit_hours} credit{s.credit_hours === 1 ? "" : "s"}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button size="small" onClick={() => openSubjectEdit(s)}>
+                      Edit
+                    </Button>
+                    <Button
+                      size="small" color="error"
+                      disabled={deactivatingSubjectId === s.id}
+                      onClick={() => handleDeactivateSubject(s.id)}
+                    >
+                      {deactivatingSubjectId === s.id ? "..." : "Deactivate"}
+                    </Button>
+                  </Box>
+                </Box>
+              ))
+            )}
+          </Box>
+
+          {/* Create / edit form — same fields do double duty */}
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            {editingSubjectId ? "Edit Subject" : "New Subject"}
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth size="small" label="Subject name *"
+                value={subjectForm.subject_name}
+                onChange={(e) => setSubjectForm({ ...subjectForm, subject_name: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth size="small" label="Subject code *" placeholder="CS401"
+                value={subjectForm.subject_code}
+                disabled={!!editingSubjectId}
+                helperText={editingSubjectId ? "Code cannot be changed" : " "}
+                onChange={(e) => setSubjectForm({ ...subjectForm, subject_code: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth size="small" label="Credit hours" type="number"
+                inputProps={{ min: 1, max: 10 }}
+                value={subjectForm.credit_hours}
+                onChange={(e) => setSubjectForm({ ...subjectForm, credit_hours: e.target.value })}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth size="small" label="Department *"
+                value={subjectForm.department}
+                onChange={(e) => setSubjectForm({ ...subjectForm, department: e.target.value })}
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          {editingSubjectId && (
+            <Button onClick={openSubjectCreate} disabled={savingSubject} color="inherit" sx={{ mr: "auto" }}>
+              Cancel Edit
+            </Button>
+          )}
+          <Button onClick={() => setManageSubjectsOpen(false)} disabled={savingSubject} color="inherit">
+            Close
+          </Button>
+          <Button
+            variant="contained" onClick={handleSaveSubject}
+            disabled={
+              savingSubject ||
+              !subjectForm.subject_name.trim() ||
+              !subjectForm.subject_code.trim() ||
+              !subjectForm.department.trim()
+            }
+          >
+            {savingSubject ? "Saving..." : editingSubjectId ? "Update Subject" : "Create Subject"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+
     </Box>
   );
 }

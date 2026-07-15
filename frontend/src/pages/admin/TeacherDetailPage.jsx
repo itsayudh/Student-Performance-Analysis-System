@@ -1,6 +1,6 @@
 // src/pages/admin/TeacherDetailPage.jsx
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -29,11 +29,14 @@ function Field({ label, value }) {
 export default function TeacherDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [teacher, setTeacher] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [alert, setAlert] = useState(null);
-  const [editing, setEditing] = useState(false);
+  // If we arrived via the list page's pencil icon (autoEdit in router
+  // state), open straight into edit mode — no second Edit click needed.
+  const [editing, setEditing] = useState(!!location.state?.autoEdit);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -61,7 +64,8 @@ export default function TeacherDetailPage() {
     setSaving(true);
     setAlert(null);
     try {
-      // TeacherUpdate accepts exactly these five fields
+      // TeacherUpdate accepts exactly these five fields — slice the
+      // form payload down to the contract at the boundary.
       const allowed = [
         "first_name",
         "last_name",
@@ -74,14 +78,29 @@ export default function TeacherDetailPage() {
         if (payload[k] !== undefined) body[k] = payload[k];
       }
 
-      const updated = await updateTeacher(id, body);
-      setTeacher(updated);
+      await updateTeacher(id, body);
+      // The PUT response is only { id, message } — not the full teacher
+      // (unlike /classes, whose update returns the whole object). Refetch
+      // so the read view shows real data, not the message envelope.
+      const fresh = await getTeacher(id);
+      setTeacher(fresh);
       setEditing(false);
       setAlert({ severity: "success", messages: "Teacher updated." });
     } catch (err) {
       setAlert({ severity: "error", ...parseApiError(err) });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    // Arrived via the list's pencil icon → cancel aborts the whole
+    // errand, back to the list. Arrived via row-click + Edit button →
+    // cancel just returns to reading this teacher.
+    if (location.state?.autoEdit) {
+      navigate("/admin/teachers");
+    } else {
+      setEditing(false);
     }
   };
 
@@ -112,8 +131,7 @@ export default function TeacherDetailPage() {
         title={fullName}
         subtitle={`Employee Code: ${teacher.employee_code}`}
         breadcrumbs={[
-          { label: "Dashboard", to: "/admin/dashboard" },
-          { label: "Teachers", to: "/admin/teachers" },
+
           { label: fullName },
         ]}
         action={
@@ -144,7 +162,7 @@ export default function TeacherDetailPage() {
             initialValues={teacher}
             loading={saving}
             onSubmit={handleUpdate}
-            onCancel={() => setEditing(false)}
+            onCancel={handleCancel}
           />
         ) : (
           <Grid container spacing={2}>
