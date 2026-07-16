@@ -123,7 +123,13 @@ def update_teacher(db: Session, teacher_id: str, data: dict):
 
     for field, value in data.items():
         if value is not None:
+     
             setattr(teacher, field, value)
+
+    if "is_active" in data and data["is_active"] is not None:
+        user = db.query(User).filter(User.id == teacher.user_id).first()
+        if user:
+            user.is_active = data["is_active"]
 
     db.commit()
     db.refresh(teacher)

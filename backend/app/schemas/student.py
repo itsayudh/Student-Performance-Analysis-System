@@ -39,6 +39,7 @@ class StudentUpdate(BaseModel):
     address: Optional[str] = None
     program: Optional[str] = None
     department: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class StudentListItem(BaseModel):

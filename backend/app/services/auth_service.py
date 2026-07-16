@@ -11,6 +11,7 @@ from app.utils.security import (
     create_access_token, create_refresh_token, decode_token
 )
 from app.utils.email import send_password_reset_email
+import secrets
 
 def login_user(email: str, password: str, db: Session) -> dict:
     user = db.query(User).filter(User.email == email).first()
@@ -160,3 +161,37 @@ def _build_user_payload(user: User, db: Session) -> dict:
         if teacher:
             payload["teacher_id"] = str(teacher.id)
     return payload
+
+def create_admin(email: str, db: Session) -> dict:
+    """
+    Creates a new ADMIN user. Same temp-password pattern as
+    student/teacher creation: backend generates the credential,
+    returns it once, only its hash persists.
+    Only callable by an existing admin (enforced at the router).
+    """
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="A valid email is required")
+
+    existing = db.query(User).filter(User.email == email).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="A user with this email already exists")
+
+    temp_password = secrets.token_urlsafe(8)
+
+    user = User(
+        id            = uuid.uuid4(),
+        email         = email,
+        password_hash = hash_password(temp_password),
+        role          = "ADMIN",
+        is_active     = True,
+    )
+    db.add(user)
+    db.commit()
+
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "role": user.role,
+        "message": f"Admin account created for {email}",
+        "temp_password": temp_password,  # dev mode — production design emails it
+    }
