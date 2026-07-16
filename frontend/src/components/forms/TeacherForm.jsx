@@ -134,7 +134,7 @@ export default function TeacherForm({
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 2 }}>
           <TextField select label="Department *" {...fieldProps("department")}>
             {DEPARTMENTS.map((d) => (
               <MenuItem key={d} value={d}>
@@ -147,7 +147,7 @@ export default function TeacherForm({
           <TextField
             label="Joining Date"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             {...fieldProps("joining_date")}
           />
         </Grid>

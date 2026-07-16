@@ -26,8 +26,12 @@ import { PageHeader } from "../../components/gridline";
 //   3. Assignment dialog — the UI over POST/GET /classes/{id}/subjects,
 //      replacing the curl workflow from the backend smoke tests.
 const EMPTY_FORM = {
-  class_name: "", class_code: "", program: "",
-  department: "", semester: "", academic_year: "",
+  class_name: "",
+  class_code: "",
+  program: "",
+  department: "",
+  semester: "",
+  academic_year: "",
   homeroom_teacher_id: "",
 };
 
@@ -66,17 +70,22 @@ export default function ClassesPage() {
 
   // ── enrollment dialog ──
   const [enrollTarget, setEnrollTarget] = useState(null); // the class row
-  const [roster, setRoster] = useState([]);               // currently enrolled
-  const [available, setAvailable] = useState([]);         // not yet enrolled
+  const [roster, setRoster] = useState([]); // currently enrolled
+  const [available, setAvailable] = useState([]); // not yet enrolled
   const [availableSearch, setAvailableSearch] = useState("");
-  const [selectedToAdd, setSelectedToAdd] = useState([]);  // student ids checked in "available"
+  const [selectedToAdd, setSelectedToAdd] = useState([]); // student ids checked in "available"
   const [enrolling, setEnrolling] = useState(false);
   const [withdrawingId, setWithdrawingId] = useState(null); // per-row spinner target
   const [enrollError, setEnrollError] = useState(null);
 
   // ── Manage Subjects mini-dialog (create + edit + deactivate) ──
   const [manageSubjectsOpen, setManageSubjectsOpen] = useState(false);
-  const EMPTY_SUBJECT = { subject_name: "", subject_code: "", department: "", credit_hours: "3" };
+  const EMPTY_SUBJECT = {
+    subject_name: "",
+    subject_code: "",
+    department: "",
+    credit_hours: "3",
+  };
   const [subjectForm, setSubjectForm] = useState(EMPTY_SUBJECT);
   const [editingSubjectId, setEditingSubjectId] = useState(null); // null = creating
   const [savingSubject, setSavingSubject] = useState(false);
@@ -93,20 +102,26 @@ export default function ClassesPage() {
         setRows(res.data.items);
         setTotal(res.data.total);
       })
-      .catch(() => setBanner({ severity: "error", text: "Could not load classes." }))
+      .catch(() =>
+        setBanner({ severity: "error", text: "Could not load classes." }),
+      )
       .finally(() => setLoading(false));
   }, [page, pageSize, search]);
 
-  useEffect(() => { fetchClasses(); }, [fetchClasses]);
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   useEffect(() => {
     Promise.all([
       api.get("/subjects", { params: { page_size: 100, is_active: true } }),
       api.get("/teachers", { params: { page_size: 100 } }),
-    ]).then(([sRes, tRes]) => {
-      setSubjects(sRes.data.items);
-      setTeachers(tRes.data.items);
-    }).catch(() => {});
+    ])
+      .then(([sRes, tRes]) => {
+        setSubjects(sRes.data.items);
+        setTeachers(tRes.data.items);
+      })
+      .catch(() => {});
   }, []);
 
   // ── create/edit handlers ──
@@ -125,9 +140,12 @@ export default function ClassesPage() {
       const c = res.data;
       setEditingId(c.id);
       setForm({
-        class_name: c.class_name, class_code: c.class_code,
-        program: c.program, department: c.department,
-        semester: String(c.semester), academic_year: c.academic_year,
+        class_name: c.class_name,
+        class_code: c.class_code,
+        program: c.program,
+        department: c.department,
+        semester: String(c.semester),
+        academic_year: c.academic_year,
         homeroom_teacher_id: c.homeroom_teacher_id || "",
       });
       setFormError(null);
@@ -140,8 +158,10 @@ export default function ClassesPage() {
     setFormError(null);
 
     const base = {
-      class_name: form.class_name, program: form.program,
-      department: form.department, semester: Number(form.semester),
+      class_name: form.class_name,
+      program: form.program,
+      department: form.department,
+      semester: Number(form.semester),
       academic_year: form.academic_year,
       homeroom_teacher_id: form.homeroom_teacher_id || null,
     };
@@ -154,14 +174,21 @@ export default function ClassesPage() {
     request
       .then(() => {
         setFormOpen(false);
-        setBanner({ severity: "success", text: editingId ? "Class updated." : "Class created." });
+        setBanner({
+          severity: "success",
+          text: editingId ? "Class updated." : "Class created.",
+        });
         fetchClasses();
       })
       .catch((err) => {
         const detail = err.response?.data?.detail;
-        setFormError(typeof detail === "string" ? detail
-          : Array.isArray(detail) ? detail.map((d) => d.msg).join("; ")
-          : "Could not save class.");
+        setFormError(
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d) => d.msg).join("; ")
+              : "Could not save class.",
+        );
       })
       .finally(() => setSaving(false));
   };
@@ -172,11 +199,16 @@ export default function ClassesPage() {
     api
       .delete(`/classes/${deleteTarget.id}`)
       .then(() => {
-        setBanner({ severity: "success", text: `${deleteTarget.class_code} deactivated.` });
+        setBanner({
+          severity: "success",
+          text: `${deleteTarget.class_code} deactivated.`,
+        });
         setDeleteTarget(null);
         fetchClasses();
       })
-      .catch(() => setBanner({ severity: "error", text: "Could not deactivate class." }))
+      .catch(() =>
+        setBanner({ severity: "error", text: "Could not deactivate class." }),
+      )
       .finally(() => setDeleting(false));
   };
 
@@ -186,7 +218,9 @@ export default function ClassesPage() {
     setAssignSubjectId("");
     setAssignTeacherId("");
     setAssignError(null);
-    api.get(`/classes/${row.id}/subjects`).then((res) => setAssignments(res.data.items));
+    api
+      .get(`/classes/${row.id}/subjects`)
+      .then((res) => setAssignments(res.data.items));
   };
 
   const handleAssign = () => {
@@ -210,7 +244,7 @@ export default function ClassesPage() {
         setAssignError(
           err.response?.status === 409
             ? "That subject is already assigned in this class."
-            : "Could not create assignment."
+            : "Could not create assignment.",
         );
       })
       .finally(() => setAssigning(false));
@@ -238,7 +272,8 @@ export default function ClassesPage() {
   };
 
   const refreshSubjects = () =>
-    api.get("/subjects", { params: { page_size: 100, is_active: true } })
+    api
+      .get("/subjects", { params: { page_size: 100, is_active: true } })
       .then((res) => setSubjects(res.data.items));
 
   const handleSaveSubject = () => {
@@ -262,19 +297,23 @@ export default function ClassesPage() {
         });
 
     request
-      .then((res) => refreshSubjects().then(() => {
-        // Newly created subjects are immediately usable in the
-        // assignment dropdown behind this dialog.
-        if (!editingSubjectId) setAssignSubjectId(res.data.id);
-        setEditingSubjectId(null);
-        setSubjectForm(EMPTY_SUBJECT);
-      }))
+      .then((res) =>
+        refreshSubjects().then(() => {
+          // Newly created subjects are immediately usable in the
+          // assignment dropdown behind this dialog.
+          if (!editingSubjectId) setAssignSubjectId(res.data.id);
+          setEditingSubjectId(null);
+          setSubjectForm(EMPTY_SUBJECT);
+        }),
+      )
       .catch((err) => {
         const detail = err.response?.data?.detail;
         setSubjectError(
-          typeof detail === "string" ? detail
-          : Array.isArray(detail) ? detail.map((d) => d.msg).join("; ")
-          : "Could not save subject."
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d) => d.msg).join("; ")
+              : "Could not save subject.",
         );
       })
       .finally(() => setSavingSubject(false));
@@ -287,10 +326,13 @@ export default function ClassesPage() {
     api
       .delete(`/subjects/${subjectId}`)
       .then(() => refreshSubjects())
-      .catch(() => setSubjectError("Could not deactivate that subject — it may be in use."))
+      .catch(() =>
+        setSubjectError(
+          "Could not deactivate that subject — it may be in use.",
+        ),
+      )
       .finally(() => setDeactivatingSubjectId(null));
   };
-
 
   // ── enrollment handlers ──
   const openEnroll = (row) => {
@@ -298,8 +340,12 @@ export default function ClassesPage() {
     setSelectedToAdd([]);
     setAvailableSearch("");
     setEnrollError(null);
-    api.get(`/classes/${row.id}/students`).then((res) => setRoster(res.data.items));
-    api.get(`/classes/${row.id}/available-students`).then((res) => setAvailable(res.data.items));
+    api
+      .get(`/classes/${row.id}/students`)
+      .then((res) => setRoster(res.data.items));
+    api
+      .get(`/classes/${row.id}/available-students`)
+      .then((res) => setAvailable(res.data.items));
   };
 
   // Re-search the "available" side as the admin types — same debounce-free
@@ -309,13 +355,17 @@ export default function ClassesPage() {
   const searchAvailable = (text) => {
     setAvailableSearch(text);
     api
-      .get(`/classes/${enrollTarget.id}/available-students`, { params: { search: text || undefined } })
+      .get(`/classes/${enrollTarget.id}/available-students`, {
+        params: { search: text || undefined },
+      })
       .then((res) => setAvailable(res.data.items));
   };
 
   const toggleSelect = (studentId) => {
     setSelectedToAdd((prev) =>
-      prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId],
     );
   };
 
@@ -337,7 +387,9 @@ export default function ClassesPage() {
     setEnrollError(null);
 
     api
-      .post(`/classes/${enrollTarget.id}/students`, { student_ids: selectedToAdd })
+      .post(`/classes/${enrollTarget.id}/students`, {
+        student_ids: selectedToAdd,
+      })
       .then(() => {
         setSelectedToAdd([]);
         return refreshEnrollDialog();
@@ -353,12 +405,13 @@ export default function ClassesPage() {
     api
       // DELETE with a body — axios needs it under `data`, not as a
       // second positional arg like post/put.
-      .delete(`/classes/${enrollTarget.id}/students`, { data: { student_ids: [studentId] } })
+      .delete(`/classes/${enrollTarget.id}/students`, {
+        data: { student_ids: [studentId] },
+      })
       .then(() => refreshEnrollDialog())
       .catch(() => setEnrollError("Could not withdraw that student."))
       .finally(() => setWithdrawingId(null));
   };
-
 
   // ── table definition ──
   // stopPropagation on buttons: not strictly needed (no onRowClick),
@@ -370,7 +423,9 @@ export default function ClassesPage() {
     { key: "semester", label: "Sem", align: "center" },
     { key: "academic_year", label: "Year" },
     {
-      key: "is_active", label: "Status", align: "center",
+      key: "is_active",
+      label: "Status",
+      align: "center",
       render: (row) => (
         <Chip
           size="small"
@@ -380,21 +435,47 @@ export default function ClassesPage() {
       ),
     },
     {
-      key: "actions", label: "Actions", align: "right",
+      key: "actions",
+      label: "Actions",
+      align: "right",
       render: (row) => (
         <Box sx={{ display: "flex", gap: 1, justifyContent: "flex-end" }}>
-          <Button size="small" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+          <Button
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEdit(row);
+            }}
+          >
             Edit
           </Button>
-          <Button size="small" onClick={(e) => { e.stopPropagation(); openAssignments(row); }}>
+          <Button
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              openAssignments(row);
+            }}
+          >
             Subjects
           </Button>
-          <Button size="small" onClick={(e) => { e.stopPropagation(); openEnroll(row); }}>
+          <Button
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEnroll(row);
+            }}
+          >
             Students
           </Button>
           {row.is_active && (
-            <Button size="small" color="error"
-              onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}>
+            <Button
+              size="small"
+              color="error"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteTarget(row);
+              }}
+            >
               Deactivate
             </Button>
           )}
@@ -405,13 +486,21 @@ export default function ClassesPage() {
 
   return (
     <Box>
-      <PageHeader 
-        title="Classes" 
-        action={<Button variant="contained" onClick={openCreate}>Add Class</Button>} 
+      <PageHeader
+        title="Classes"
+        action={
+          <Button variant="contained" onClick={openCreate}>
+            Add Class
+          </Button>
+        }
       />
 
       {banner && (
-        <Alert severity={banner.severity} sx={{ mb: 2 }} onClose={() => setBanner(null)}>
+        <Alert
+          severity={banner.severity}
+          sx={{ mb: 2 }}
+          onClose={() => setBanner(null)}
+        >
           {banner.text}
         </Alert>
       )}
@@ -424,50 +513,108 @@ export default function ClassesPage() {
         pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={setPageSize}
-        onSearch={(text) => { setSearch(text); setPage(1); }}
+        onSearch={(text) => {
+          setSearch(text);
+          setPage(1);
+        }}
         searchPlaceholder="Search by name or code..."
         loading={loading}
         emptyMessage="No classes yet — add the first one."
       />
 
       {/* ── Create / Edit dialog ── */}
-      <Dialog open={formOpen} onClose={saving ? undefined : () => setFormOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={formOpen}
+        onClose={saving ? undefined : () => setFormOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>{editingId ? "Edit Class" : "Add Class"}</DialogTitle>
         <DialogContent>
-          {formError && <Alert severity="error" sx={{ mb: 2 }}>{formError}</Alert>}
+          {formError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {formError}
+            </Alert>
+          )}
           <Grid container spacing={2} sx={{ mt: 0 }}>
             <Grid item xs={6}>
-              <TextField fullWidth size="small" label="Class name *" value={form.class_name}
-                onChange={(e) => setForm({ ...form, class_name: e.target.value })} />
+              <TextField
+                fullWidth
+                size="small"
+                label="Class name *"
+                value={form.class_name}
+                onChange={(e) =>
+                  setForm({ ...form, class_name: e.target.value })
+                }
+              />
             </Grid>
             <Grid item xs={6}>
-              <TextField fullWidth size="small" label="Class code *" value={form.class_code}
+              <TextField
+                fullWidth
+                size="small"
+                label="Class code *"
+                value={form.class_code}
                 disabled={!!editingId}
                 helperText={editingId ? "Code cannot be changed" : " "}
-                onChange={(e) => setForm({ ...form, class_code: e.target.value })} />
+                onChange={(e) =>
+                  setForm({ ...form, class_code: e.target.value })
+                }
+              />
             </Grid>
             <Grid item xs={6}>
-              <TextField fullWidth size="small" label="Program *" value={form.program}
-                onChange={(e) => setForm({ ...form, program: e.target.value })} />
+              <TextField
+                fullWidth
+                size="small"
+                label="Program *"
+                value={form.program}
+                onChange={(e) => setForm({ ...form, program: e.target.value })}
+              />
             </Grid>
             <Grid item xs={6}>
-              <TextField fullWidth size="small" label="Department *" value={form.department}
-                onChange={(e) => setForm({ ...form, department: e.target.value })} />
+              <TextField
+                fullWidth
+                size="small"
+                label="Department *"
+                value={form.department}
+                onChange={(e) =>
+                  setForm({ ...form, department: e.target.value })
+                }
+              />
             </Grid>
             <Grid item xs={6}>
-              <TextField fullWidth size="small" label="Semester *" type="number"
-                inputProps={{ min: 1, max: 12 }} value={form.semester}
-                onChange={(e) => setForm({ ...form, semester: e.target.value })} />
+              <TextField
+                fullWidth
+                size="small"
+                label="Semester *"
+                type="number"
+                inputProps={{ min: 1, max: 12 }}
+                value={form.semester}
+                onChange={(e) => setForm({ ...form, semester: e.target.value })}
+              />
             </Grid>
             <Grid item xs={6}>
-              <TextField fullWidth size="small" label="Academic year *" placeholder="2025-2026"
+              <TextField
+                fullWidth
+                size="small"
+                label="Academic year *"
+                placeholder="2025-2026"
                 value={form.academic_year}
-                onChange={(e) => setForm({ ...form, academic_year: e.target.value })} />
+                onChange={(e) =>
+                  setForm({ ...form, academic_year: e.target.value })
+                }
+              />
             </Grid>
-            <Grid item xs={12}>
-              <TextField select fullWidth size="small" label="Homeroom teacher"
+            <Grid size={{ xs: 12, sm: 4.3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Homeroom teacher"
                 value={form.homeroom_teacher_id}
-                onChange={(e) => setForm({ ...form, homeroom_teacher_id: e.target.value })}>
+                onChange={(e) =>
+                  setForm({ ...form, homeroom_teacher_id: e.target.value })
+                }
+              >
                 <MenuItem value="">None</MenuItem>
                 {teachers.map((t) => (
                   <MenuItem key={t.id} value={t.id}>
@@ -479,7 +626,13 @@ export default function ClassesPage() {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setFormOpen(false)} disabled={saving} color="inherit">Cancel</Button>
+          <Button
+            onClick={() => setFormOpen(false)}
+            disabled={saving}
+            color="inherit"
+          >
+            Cancel
+          </Button>
           <Button variant="contained" onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -490,7 +643,11 @@ export default function ClassesPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Deactivate class?"
-        message={deleteTarget ? `${deleteTarget.class_name} (${deleteTarget.class_code}) will be hidden from active listings. History is preserved.` : ""}
+        message={
+          deleteTarget
+            ? `${deleteTarget.class_name} (${deleteTarget.class_code}) will be hidden from active listings. History is preserved.`
+            : ""
+        }
         confirmText="Deactivate"
         danger
         loading={deleting}
@@ -499,7 +656,12 @@ export default function ClassesPage() {
       />
 
       {/* ── Subject assignment dialog ── */}
-      <Dialog open={!!assignTarget} onClose={() => setAssignTarget(null)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={!!assignTarget}
+        onClose={() => setAssignTarget(null)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Subjects — {assignTarget?.class_code}</DialogTitle>
         <DialogContent>
           {assignments.length === 0 ? (
@@ -508,8 +670,15 @@ export default function ClassesPage() {
             </Typography>
           ) : (
             assignments.map((a) => (
-              <Box key={a.assignment_id}
-                sx={{ display: "flex", justifyContent: "space-between", py: 1, borderBottom: "1px solid #F0F1F3" }}>
+              <Box
+                key={a.assignment_id}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  py: 1,
+                  borderBottom: "1px solid #F0F1F3",
+                }}
+              >
                 <Typography variant="body2">
                   {a.subject_name} ({a.subject_code})
                 </Typography>
@@ -520,51 +689,95 @@ export default function ClassesPage() {
             ))
           )}
 
-          {assignError && <Alert severity="warning" sx={{ mt: 2 }}>{assignError}</Alert>}
+          {assignError && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {assignError}
+            </Alert>
+          )}
 
           <Grid container spacing={1.5} sx={{ mt: 1 }}>
-            <Grid item xs={4}>
-              <TextField select fullWidth size="small" label="Subject" value={assignSubjectId}
-                onChange={(e) => setAssignSubjectId(e.target.value)}>
+            <Grid size={{ xs: 10, sm: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Subject"
+                value={assignSubjectId}
+                onChange={(e) => setAssignSubjectId(e.target.value)}
+              >
                 {subjects.map((s) => (
-                  <MenuItem key={s.id} value={s.id}>{s.subject_code}</MenuItem>
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.subject_name} ({s.subject_code})
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={1} sx={{ display: "flex", alignItems: "flex-start" }}>
+            <Grid
+              item
+              xs={1}
+              sx={{ display: "flex", alignItems: "flex-start" }}
+            >
               <Button
-                size="small" variant="outlined" sx={{ minWidth: 0, px: 1 }}
-                onClick={() => { openSubjectCreate(); setManageSubjectsOpen(true); }}
+                size="small"
+                variant="outlined"
+                sx={{ minWidth: 0, px: 1, py: 0.8 }}
+                onClick={() => {
+                  openSubjectCreate();
+                  setManageSubjectsOpen(true);
+                }}
               >
                 Manage Subjects
               </Button>
             </Grid>
-            <Grid item xs={5}>
-              <TextField select fullWidth size="small" label="Teacher" value={assignTeacherId}
-                onChange={(e) => setAssignTeacherId(e.target.value)}>
+            <Grid size={{ xs: 10, sm: 3 }}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Teacher"
+                value={assignTeacherId}
+                onChange={(e) => setAssignTeacherId(e.target.value)}
+              >
                 {teachers.map((t) => (
-                  <MenuItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</MenuItem>
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.first_name} {t.last_name}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
             <Grid item xs={2}>
-              <Button fullWidth variant="contained" onClick={handleAssign}
-                disabled={assigning || !assignSubjectId || !assignTeacherId}>
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleAssign}
+                disabled={assigning || !assignSubjectId || !assignTeacherId}
+              >
                 Add
               </Button>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setAssignTarget(null)} color="inherit">Close</Button>
+          <Button onClick={() => setAssignTarget(null)} color="inherit">
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* ── Enrollment dialog ── */}
-      <Dialog open={!!enrollTarget} onClose={() => setEnrollTarget(null)} maxWidth="md" fullWidth>
+      <Dialog
+        open={!!enrollTarget}
+        onClose={() => setEnrollTarget(null)}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle>Students — {enrollTarget?.class_code}</DialogTitle>
         <DialogContent>
-          {enrollError && <Alert severity="warning" sx={{ mb: 2 }}>{enrollError}</Alert>}
+          {enrollError && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {enrollError}
+            </Alert>
+          )}
 
           <Grid container spacing={2}>
             {/* Left: currently enrolled roster */}
@@ -572,9 +785,20 @@ export default function ClassesPage() {
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Enrolled ({roster.length})
               </Typography>
-              <Box sx={{ maxHeight: 320, overflowY: "auto", border: "1px solid #E5E7EB", borderRadius: 1 }}>
+              <Box
+                sx={{
+                  maxHeight: 320,
+                  overflowY: "auto",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 1,
+                }}
+              >
                 {roster.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ p: 2 }}
+                  >
                     No students enrolled yet.
                   </Typography>
                 ) : (
@@ -582,15 +806,20 @@ export default function ClassesPage() {
                     <Box
                       key={s.id}
                       sx={{
-                        display: "flex", justifyContent: "space-between", alignItems: "center",
-                        px: 1.5, py: 1, borderBottom: "1px solid #F0F1F3",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        px: 1.5,
+                        py: 1,
+                        borderBottom: "1px solid #F0F1F3",
                       }}
                     >
                       <Typography variant="body2">
                         {s.first_name} {s.last_name} ({s.student_code})
                       </Typography>
                       <Button
-                        size="small" color="error"
+                        size="small"
+                        color="error"
                         disabled={withdrawingId === s.id}
                         onClick={() => handleWithdraw(s.id)}
                       >
@@ -608,14 +837,27 @@ export default function ClassesPage() {
                 Available ({available.length})
               </Typography>
               <TextField
-                fullWidth size="small" placeholder="Search by name or code..."
+                fullWidth
+                size="small"
+                placeholder="Search by name or code..."
                 value={availableSearch}
                 onChange={(e) => searchAvailable(e.target.value)}
                 sx={{ mb: 1 }}
               />
-              <Box sx={{ maxHeight: 260, overflowY: "auto", border: "1px solid #E5E7EB", borderRadius: 1 }}>
+              <Box
+                sx={{
+                  maxHeight: 260,
+                  overflowY: "auto",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: 1,
+                }}
+              >
                 {available.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ p: 2 }}
+                  >
                     No unenrolled students match.
                   </Typography>
                 ) : (
@@ -624,10 +866,16 @@ export default function ClassesPage() {
                       key={s.id}
                       onClick={() => toggleSelect(s.id)}
                       sx={{
-                        display: "flex", alignItems: "center", gap: 1,
-                        px: 1.5, py: 1, borderBottom: "1px solid #F0F1F3",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 1.5,
+                        py: 1,
+                        borderBottom: "1px solid #F0F1F3",
                         cursor: "pointer",
-                        bgcolor: selectedToAdd.includes(s.id) ? "action.selected" : "transparent",
+                        bgcolor: selectedToAdd.includes(s.id)
+                          ? "action.selected"
+                          : "transparent",
                       }}
                     >
                       <input
@@ -644,31 +892,54 @@ export default function ClassesPage() {
                 )}
               </Box>
               <Button
-                fullWidth variant="contained" sx={{ mt: 1 }}
+                fullWidth
+                variant="contained"
+                sx={{ mt: 1 }}
                 disabled={enrolling || selectedToAdd.length === 0}
                 onClick={handleEnroll}
               >
-                {enrolling ? "Enrolling..." : `Enroll ${selectedToAdd.length || ""} Selected`}
+                {enrolling
+                  ? "Enrolling..."
+                  : `Enroll ${selectedToAdd.length || ""} Selected`}
               </Button>
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setEnrollTarget(null)} color="inherit">Close</Button>
+          <Button onClick={() => setEnrollTarget(null)} color="inherit">
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* ── Manage Subjects mini-dialog (nested inside the assignment flow) ── */}
-      <Dialog open={manageSubjectsOpen} onClose={savingSubject ? undefined : () => setManageSubjectsOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={manageSubjectsOpen}
+        onClose={savingSubject ? undefined : () => setManageSubjectsOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Manage Subjects</DialogTitle>
         <DialogContent>
-          {subjectError && <Alert severity="error" sx={{ mb: 2 }}>{subjectError}</Alert>}
+          {subjectError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {subjectError}
+            </Alert>
+          )}
 
           {/* Existing subjects — each editable or deactivatable inline */}
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
             Existing Subjects
           </Typography>
-          <Box sx={{ maxHeight: 220, overflowY: "auto", border: "1px solid #E5E7EB", borderRadius: 1, mb: 2 }}>
+          <Box
+            sx={{
+              maxHeight: 220,
+              overflowY: "auto",
+              border: "1px solid #E5E7EB",
+              borderRadius: 1,
+              mb: 2,
+            }}
+          >
             {subjects.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
                 No subjects yet — create the first one below.
@@ -678,9 +949,16 @@ export default function ClassesPage() {
                 <Box
                   key={s.id}
                   sx={{
-                    display: "flex", justifyContent: "space-between", alignItems: "center",
-                    px: 1.5, py: 1, borderBottom: "1px solid #F0F1F3",
-                    bgcolor: editingSubjectId === s.id ? "action.selected" : "transparent",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    px: 1.5,
+                    py: 1,
+                    borderBottom: "1px solid #F0F1F3",
+                    bgcolor:
+                      editingSubjectId === s.id
+                        ? "action.selected"
+                        : "transparent",
                   }}
                 >
                   <Box>
@@ -688,7 +966,8 @@ export default function ClassesPage() {
                       {s.subject_name} ({s.subject_code})
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {s.department} · {s.credit_hours} credit{s.credit_hours === 1 ? "" : "s"}
+                      {s.department} · {s.credit_hours} credit
+                      {s.credit_hours === 1 ? "" : "s"}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", gap: 1 }}>
@@ -696,7 +975,8 @@ export default function ClassesPage() {
                       Edit
                     </Button>
                     <Button
-                      size="small" color="error"
+                      size="small"
+                      color="error"
                       disabled={deactivatingSubjectId === s.id}
                       onClick={() => handleDeactivateSubject(s.id)}
                     >
@@ -715,48 +995,85 @@ export default function ClassesPage() {
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <TextField
-                fullWidth size="small" label="Subject name *"
+                fullWidth
+                size="small"
+                label="Subject name *"
                 value={subjectForm.subject_name}
-                onChange={(e) => setSubjectForm({ ...subjectForm, subject_name: e.target.value })}
+                onChange={(e) =>
+                  setSubjectForm({
+                    ...subjectForm,
+                    subject_name: e.target.value,
+                  })
+                }
               />
             </Grid>
             <Grid item xs={6}>
               <TextField
-                fullWidth size="small" label="Subject code *" placeholder="CS401"
+                fullWidth
+                size="small"
+                label="Subject code *"
+                placeholder="CS401"
                 value={subjectForm.subject_code}
                 disabled={!!editingSubjectId}
                 helperText={editingSubjectId ? "Code cannot be changed" : " "}
-                onChange={(e) => setSubjectForm({ ...subjectForm, subject_code: e.target.value })}
+                onChange={(e) =>
+                  setSubjectForm({
+                    ...subjectForm,
+                    subject_code: e.target.value,
+                  })
+                }
               />
             </Grid>
             <Grid item xs={6}>
               <TextField
-                fullWidth size="small" label="Credit hours" type="number"
+                fullWidth
+                size="small"
+                label="Credit hours"
+                type="number"
                 inputProps={{ min: 1, max: 10 }}
                 value={subjectForm.credit_hours}
-                onChange={(e) => setSubjectForm({ ...subjectForm, credit_hours: e.target.value })}
+                onChange={(e) =>
+                  setSubjectForm({
+                    ...subjectForm,
+                    credit_hours: e.target.value,
+                  })
+                }
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
-                fullWidth size="small" label="Department *"
+                fullWidth
+                size="small"
+                label="Department *"
                 value={subjectForm.department}
-                onChange={(e) => setSubjectForm({ ...subjectForm, department: e.target.value })}
+                onChange={(e) =>
+                  setSubjectForm({ ...subjectForm, department: e.target.value })
+                }
               />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           {editingSubjectId && (
-            <Button onClick={openSubjectCreate} disabled={savingSubject} color="inherit" sx={{ mr: "auto" }}>
+            <Button
+              onClick={openSubjectCreate}
+              disabled={savingSubject}
+              color="inherit"
+              sx={{ mr: "auto" }}
+            >
               Cancel Edit
             </Button>
           )}
-          <Button onClick={() => setManageSubjectsOpen(false)} disabled={savingSubject} color="inherit">
+          <Button
+            onClick={() => setManageSubjectsOpen(false)}
+            disabled={savingSubject}
+            color="inherit"
+          >
             Close
           </Button>
           <Button
-            variant="contained" onClick={handleSaveSubject}
+            variant="contained"
+            onClick={handleSaveSubject}
             disabled={
               savingSubject ||
               !subjectForm.subject_name.trim() ||
@@ -764,12 +1081,14 @@ export default function ClassesPage() {
               !subjectForm.department.trim()
             }
           >
-            {savingSubject ? "Saving..." : editingSubjectId ? "Update Subject" : "Create Subject"}
+            {savingSubject
+              ? "Saving..."
+              : editingSubjectId
+                ? "Update Subject"
+                : "Create Subject"}
           </Button>
         </DialogActions>
       </Dialog>
-
-
     </Box>
   );
 }
