@@ -137,8 +137,7 @@ export default function StudentForm({
             disabled={isEdit}
           />
         </Grid>
-
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 2 }}>
           <TextField select label="Gender" {...fieldProps("gender")}>
             <MenuItem value="">— None —</MenuItem>
             {GENDERS.map((g) => (
@@ -150,9 +149,9 @@ export default function StudentForm({
         </Grid>
         <Grid item xs={12} sm={6}>
           <TextField
-            label=""
+            label="Date of birth"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             {...fieldProps("date_of_birth")}
           />
         </Grid>
@@ -164,7 +163,7 @@ export default function StudentForm({
           <TextField label="Address" {...fieldProps("address")} />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 2 }}>
           <TextField select label="Program *" {...fieldProps("program")}>
             {PROGRAMS.map((p) => (
               <MenuItem key={p} value={p}>
@@ -173,7 +172,7 @@ export default function StudentForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ xs: 12, sm: 2 }}>
           <TextField select label="Department *" {...fieldProps("department")}>
             {DEPARTMENTS.map((d) => (
               <MenuItem key={d} value={d}>
@@ -187,7 +186,7 @@ export default function StudentForm({
           <TextField
             label="Admission Date *"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             {...fieldProps("admission_date")}
           />
         </Grid>

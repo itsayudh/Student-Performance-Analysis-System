@@ -102,12 +102,12 @@ export default function AttendanceForm({
     <Box>
       {/* ---- Header selectors ---- */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 1 }}>
           <TextField
             select
             fullWidth
             size="small"
-            label="Class *"
+            label="Class"
             value={classId}
             onChange={handleClassChange}
             error={!!errors.class_id}
@@ -120,12 +120,12 @@ export default function AttendanceForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, sm: 1.1 }}>
           <TextField
             select
             fullWidth
             size="small"
-            label="Subject *"
+            label="Subject"
             value={subjectId}
             onChange={(e) => setSubjectId(e.target.value)}
             error={!!errors.subject_id}
@@ -144,7 +144,7 @@ export default function AttendanceForm({
             size="small"
             label="Date *"
             type="date"
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             value={date}
             onChange={(e) => setDate(e.target.value)}
             error={!!errors.attendance_date}

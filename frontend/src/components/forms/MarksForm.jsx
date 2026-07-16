@@ -124,12 +124,12 @@ export default function MarksForm({
     <Box>
       {/* ---- Header selectors ---- */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} sm={3}>
+        <Grid size={{ xs: 12, sm: 1 }}>
           <TextField
             select
             fullWidth
             size="small"
-            label="Class *"
+            label="Class"
             value={classId}
             onChange={handleClassChange}
             error={!!errors.class_id}
@@ -142,12 +142,12 @@ export default function MarksForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={3}>
+        <Grid size={{ xs: 12, sm: 1.17 }}>
           <TextField
             select
             fullWidth
             size="small"
-            label="Subject *"
+            label="Subject"
             value={subjectId}
             onChange={(e) => setSubjectId(e.target.value)}
             error={!!errors.subject_id}
@@ -160,12 +160,12 @@ export default function MarksForm({
             ))}
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={3}>
+        <Grid size={{ xs: 12, sm: 1.37 }}>
           <TextField
             select
             fullWidth
             size="small"
-            label="Mark Type *"
+            label="Mark Type"
             value={markType}
             onChange={(e) => setMarkType(e.target.value)}
             error={!!errors.mark_type}
