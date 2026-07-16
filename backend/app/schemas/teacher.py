@@ -33,6 +33,7 @@ class TeacherUpdate(BaseModel):
     department: Optional[str] = None
     specialization: Optional[str] = None
     qualification: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class TeacherListItem(BaseModel):

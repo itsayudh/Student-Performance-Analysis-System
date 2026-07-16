@@ -18,9 +18,10 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.services.auth_service import (
     login_user, logout_user, refresh_access_token,
-    forgot_password, reset_password, change_password
+    forgot_password, reset_password, change_password, create_admin
 )
 from app.api.deps import get_current_user
+from app.api.deps import require_role
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -150,3 +151,11 @@ def change_password_route(
     current  = payload.get("current_password")
     new_pass = payload.get("new_password")
     return change_password(str(current_user.id), current, new_pass, db)
+
+@router.post("/admins")
+def add_admin(
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user = Depends(require_role("ADMIN"))
+):
+    return create_admin(payload.get("email"), db)

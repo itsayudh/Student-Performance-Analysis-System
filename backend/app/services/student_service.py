@@ -129,6 +129,15 @@ def update_student(db: Session, student_id: str, data: dict):
         if value is not None:
             setattr(student, field, value)
 
+    # Two-table sync: delete_student deactivates BOTH the Student row
+    # and the linked User row, so reactivation must restore both — or
+    # the student stays locked out at login ("Account is deactivated")
+    # while showing a green Active chip in the admin UI.
+    if "is_active" in data and data["is_active"] is not None:
+        user = db.query(User).filter(User.id == student.user_id).first()
+        if user:
+            user.is_active = data["is_active"]        
+
     db.commit()
     db.refresh(student)
     return {"id": str(student.id), "message": "Student updated successfully"}

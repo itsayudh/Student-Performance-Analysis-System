@@ -13,9 +13,9 @@ import DataTable from "../../components/common/DataTable";
 import AlertBanner from "../../components/common/AlertBanner";
 import ConfirmDialog from "../../components/common/ConfirmDialog";
 import usePaginatedList from "../../hooks/usePaginatedList";
-import { getTeachers, deleteTeacher } from "../../services/teacherService";
+import { getTeachers, deleteTeacher,updateTeacher  } from "../../services/teacherService";
 import { parseApiError } from "../../utils/apiError";
-
+import RestoreIcon from "@mui/icons-material/Restore";
 export default function TeachersPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,6 +67,18 @@ export default function TeachersPage() {
       setConfirmTarget(null);
     }
   };
+  const handleReactivate = async (row) => {
+    try {
+      await updateTeacher(row.id, { is_active: true });
+      setAlert({
+        severity: "success",
+        messages: `${row.first_name} ${row.last_name} was reactivated.`,
+      });
+      refetch();
+    } catch (err) {
+      setAlert({ severity: "error", ...parseApiError(err) });
+    }
+  };
 
   const columns = [
     { key: "employee_code", label: "Code" },
@@ -104,18 +116,33 @@ export default function TeachersPage() {
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmTarget(row);
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {row.is_active ? (
+            <Tooltip title="Deactivate">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmTarget(row);
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Reactivate">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReactivate(row);
+                }}
+              >
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </>
       ),
     },
