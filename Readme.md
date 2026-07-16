@@ -51,7 +51,7 @@ id: anju@gmail.com -->
 
 > The **Student Performance Analysis System (SPAS)** is a full-stack, AI-powered web application designed to assist educational institutions in comprehensively monitoring, evaluating, and improving student academic outcomes. This system integrates robust data management, real-time analytics, machine learning prediction models, and an automated recommendation engine within a single, unified platform.
 
-The SPAS is built for three primary user groups: **Administrators**, **Teachers**, and **Students**. Each group interacts with a dedicated portal that provides role-appropriate dashboards, data entry capabilities, analytics views, and ML-generated insights.
+> The SPAS is built for three primary user groups: **Administrators**, **Teachers**, and **Students**. Each group interacts with a dedicated portal that provides role-appropriate dashboards, data entry capabilities, analytics views, and ML-generated insights.
 
 ## Built With
 
